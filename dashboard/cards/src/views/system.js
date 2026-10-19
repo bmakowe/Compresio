@@ -47,7 +47,8 @@ export class SystemView {
     <div class="cols-3">${EQUIP.map(([g, keys]) => `<div><div class="small muted" style="margin-bottom:4px">${g}</div>
       ${keys.map((k) => `<div class="eq-row"><div><div class="k">${esc(EQ_LABEL[k] || SERIES[k].name)}</div><div class="tiny" data-b="eq-${k}-s"></div></div>
         <button class="toggle" data-eq="${k}" title="vorhanden / nicht vorhanden"></button></div>`).join('')}</div>`).join('')}</div>
-    <div class="eq-casc"><label>Nenndruck Speicherkaskade [bar]<input type="number" min="0" step="1" data-i="cascade_nominal"></label>
+    <div class="eq-casc"><label>Flaschen der Speicherkaskade<select data-i="cascade_bottles">${[1, 2, 3, 4, 5, 6].map((n) => `<option value="${n}">${n}</option>`).join('')}</select></label>
+      <label>Nenndruck Speicherkaskade [bar]<input type="number" min="0" step="1" data-i="cascade_nominal"></label>
       <button class="btn ghost" data-act="cascade">Übernehmen</button>
       <span class="tiny">für die Füllstandsanzeige (0 = nicht festgelegt), keine Betriebsgrenze</span></div>
     <div class="tiny" style="margin-top:6px">Nicht vorhandene Sensoren erzeugen keine Meldungen, werden nicht simuliert und erscheinen im Dashboard als „Kein Sensor“.</div></div>
@@ -64,6 +65,7 @@ export class SystemView {
       el.dispatchEvent(new CustomEvent('hass-more-info', { bubbles: true, composed: true, detail: { entityId: S[el.dataset.more] } }))));
     root.querySelectorAll('[data-eq]').forEach((el) => el.addEventListener('click', () => this.toggleEquip(el.dataset.eq)));
     root.querySelector('[data-act="cascade"]').addEventListener('click', () => this.saveNominal());
+    root.querySelector('[data-i="cascade_bottles"]').addEventListener('change', (ev) => this.saveBottles(ev.target.value));
     this.charts.cr = new Chart(root.querySelector('[data-c="cr"]'), { ...baseOptions({ height: 220, id: 'sys-cr' }), series: [], yaxis: [yAxis('%', { min: 0, max: 100 })] });
     this.loadChart();
   }
@@ -82,6 +84,11 @@ export class SystemView {
     if (!Number.isFinite(v) || v < 0 || v > 450) { this.app.toast('Nenndruck 0–450 bar'); return; }
     await this.app.hass.callService('number', 'set_value', { entity_id: this.app.base.entities.cascade_nominal, value: v });
     el.dataset.dirty = ''; this.app.toast('Nenndruck übernommen');
+  }
+
+  async saveBottles(v) {
+    await this.app.hass.callService('number', 'set_value', { entity_id: this.app.base.entities.cascade_bottles, value: Number(v) });
+    this.app.toast(`Speicherkaskade: ${v} Flasche${v === '1' ? '' : 'n'}`);
   }
 
   async loadChart() {
@@ -131,6 +138,8 @@ export class SystemView {
       set(`eq-${k}-s`, !sw ? 'Schalter fehlt' : sw.state === 'off' ? 'nicht vorhanden' : SS_TEXT[ss] ?? 'Status unbekannt',
           `tiny c-${!sw || sw.state === 'off' ? 'na' : ss === 'ok' ? 'ok' : ss === 'ungueltig' ? 'warn' : 'na'}`);
     }
+    const bs = this.root.querySelector('[data-i="cascade_bottles"]'), bv = num(hass, B.cascade_bottles);
+    if (bs && this.root.getRootNode().activeElement !== bs) { bs.value = String(bv >= 1 && bv <= 6 ? bv : 3); bs.disabled = bv === null; }
     const ni = this.root.querySelector('[data-i="cascade_nominal"]'), nv = num(hass, B.cascade_nominal);
     if (ni && this.root.getRootNode().activeElement !== ni && nv !== null && ni.value !== String(nv)) ni.value = String(nv);
     set('up', `${fmt(num(hass, S.uptime), 1)} h`); set('up-s', attr.flows_version ? `Flows ${attr.flows_version}` : '');

@@ -39,7 +39,7 @@ kompressor/
 ├─ cycle/current_minutes   laufender Zyklus
 ├─ cycle/last_minutes      letzter Zyklus
 ├─ maintenance/status | filter_status | hours_since | filter_hours_since | remaining_h | filter_remaining_h | attr
-├─ maintenance/config/<interval_h|filter_interval_h|pressure_setpoint_bar|rate_reference_bar_min|cascade_nominal_bar>[/set]
+├─ maintenance/config/<interval_h|filter_interval_h|pressure_setpoint_bar|rate_reference_bar_min|cascade_nominal_bar|cascade_bottles>[/set]
 ├─ maintenance/<service_done|filter_done>/set
 ├─ alerts                  JSON: aktive Meldungen
 ├─ alert/<kategorie>       ON/OFF: comm, sensor_data, temperature, pressure, maintenance, database
