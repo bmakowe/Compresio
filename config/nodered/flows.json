@@ -1,0 +1,2153 @@
+[
+ {
+  "id": "krm2924a2d011c2",
+  "type": "mqtt-broker",
+  "name": "Mosquitto (lokal)",
+  "broker": "core-mosquitto",
+  "port": "1883",
+  "clientid": "kompressor-nodered",
+  "autoConnect": true,
+  "usetls": false,
+  "protocolVersion": "4",
+  "keepalive": "30",
+  "cleansession": true,
+  "autoUnsubscribe": true,
+  "birthTopic": "kompressor/availability",
+  "birthQos": "1",
+  "birthRetain": "true",
+  "birthPayload": "online",
+  "birthMsg": {},
+  "closeTopic": "kompressor/availability",
+  "closeQos": "1",
+  "closeRetain": "true",
+  "closePayload": "offline",
+  "closeMsg": {},
+  "willTopic": "kompressor/availability",
+  "willQos": "1",
+  "willRetain": "true",
+  "willPayload": "offline",
+  "willMsg": {},
+  "userProps": "",
+  "sessionExpiry": ""
+ },
+ {
+  "id": "krmd1de67c176f2",
+  "type": "tab",
+  "label": "00 Konfiguration",
+  "disabled": false,
+  "info": "Zentrale Parameter. ALLE Schwellwerte sind TEST-Werte, keine Herstellerangaben."
+ },
+ {
+  "id": "krm671472528ce5",
+  "type": "comment",
+  "z": "krmd1de67c176f2",
+  "name": "Zentrale Konfiguration – TEST-Werte",
+  "x": 170,
+  "y": 40,
+  "wires": [],
+  "info": "Alle Grenz- und Schwellwerte in diesem Tab sind **vorläufige TEST-Werte**.\nSie sind KEINE Herstellerangaben und dienen nur dem Test der\nVerarbeitungskette. Vor dem Echtbetrieb anhand der Betriebsanleitung ersetzen.\n\n- `sensors.*.min/max`: Plausibilitätsbereich (Messbereich), nicht Betriebsgrenze\n- `sensors.*.stale_s`: nach dieser Zeit ohne Wert gilt ein Sensor als \"keine Daten\"\n- `running`: Motorstrom-Schwellen für die Laufzustandserkennung (mit Hysterese)\n- `alerts`: Warn-/Störschwellen (TEST)"
+ },
+ {
+  "id": "krm033657ca08a0",
+  "type": "function",
+  "z": "krmd1de67c176f2",
+  "name": "Konfiguration setzen (TEST-Werte)",
+  "x": 480,
+  "y": 120,
+  "wires": [],
+  "func": "// ALLE Schwellwerte sind vorläufige TEST-WERTE und KEINE Herstellerangaben.\n// Sie dienen ausschließlich dem Test der Verarbeitungskette und müssen nach\n// Prüfung der Herstellerunterlagen ersetzt werden (docs/nodered.md, docs/maintenance.md).\nglobal.set('cfg', {\n    version: '1.1.0',\n    thresholds_are_test_values: true,\n    sensors: {\n        pressure_final: { name: 'Enddruck',             unit: 'bar', min: -1,  max: 450, stale_s: 30, dec: 1, topic: 'pressure/final' },\n        temp_stage1:    { name: 'Zylindertemperatur Stufe 1', unit: '°C', min: -40, max: 300, stale_s: 30, dec: 1, topic: 'temperature/stage1' },\n        temp_coil12:    { name: 'Kühlspirale Stufe 1→2',      unit: '°C', min: -40, max: 300, stale_s: 30, dec: 1, topic: 'temperature/coil12' },\n        temp_stage2:    { name: 'Zylindertemperatur Stufe 2', unit: '°C', min: -40, max: 300, stale_s: 30, dec: 1, topic: 'temperature/stage2' },\n        temp_coil23:    { name: 'Kühlspirale Stufe 2→3',      unit: '°C', min: -40, max: 300, stale_s: 30, dec: 1, topic: 'temperature/coil23' },\n        temp_stage3:    { name: 'Zylindertemperatur Stufe 3', unit: '°C', min: -40, max: 300, stale_s: 30, dec: 1, topic: 'temperature/stage3' },\n        temp_room:      { name: 'Raumtemperatur',             unit: '°C', min: -30, max: 60,  stale_s: 120, dec: 1, topic: 'temperature/room' },\n        motor_current:  { name: 'Motorstrom',           unit: 'A',   min: 0,   max: 100, stale_s: 30, dec: 2, topic: 'motor/current' },\n        supply_voltage: { name: 'Versorgungsspannung',  unit: 'V',   min: 0,   max: 500, stale_s: 60, dec: 0, topic: 'supply/voltage' }\n    },\n    running: { on_a: 2.0, off_a: 1.0, debounce_s: 4 },               // TEST\n    alerts: {                                                          // TEST\n        temp_warn_c: 150, temp_crit_c: 180, temp_rate_warn_c_min: 20,\n        pressure_warn_bar: 220, pressure_crit_bar: 240,\n        no_rise_after_min: 3, no_rise_rate_bar_min: 0.5,\n        maint_soon_ratio: 0.9\n    },\n    // Vergleichbare Betriebszyklen für Druckanstieg/Referenz (Annahme, siehe docs/diagnostics.md)\n    cycle: { min_duration_s: 120, min_delta_bar: 50 },\n    comm_timeout_s: 60,      // keine Messdaten -> Kommunikationsausfall\n    ts_max_future_s: 30,     // Zeitstempel weiter in der Zukunft -> durch Empfangszeit ersetzt\n    ts_max_past_s: 3600,     // Zeitstempel älter -> verworfen\n    invalid_hold_s: 60       // so lange bleibt ein Sensor nach ungültigem Wert \"ungültig\"\n});\nnode.status({ fill: 'yellow', shape: 'dot', text: 'TEST-Schwellwerte aktiv' });\nreturn null;",
+  "outputs": 0,
+  "timeout": 0,
+  "noerr": 0,
+  "initialize": "",
+  "finalize": "",
+  "libs": []
+ },
+ {
+  "id": "krm953777b73cde",
+  "type": "inject",
+  "z": "krmd1de67c176f2",
+  "name": "beim Start",
+  "x": 190,
+  "y": 120,
+  "wires": [
+   [
+    "krm033657ca08a0"
+   ]
+  ],
+  "props": [
+   {
+    "p": "payload"
+   },
+   {
+    "p": "topic",
+    "vt": "str"
+   }
+  ],
+  "repeat": "",
+  "crontab": "",
+  "once": true,
+  "onceDelay": "0.1",
+  "topic": "tick",
+  "payload": "",
+  "payloadType": "date"
+ },
+ {
+  "id": "krm0740c23ccca8",
+  "type": "tab",
+  "label": "01 MQTT-Eingang",
+  "disabled": false,
+  "info": "Empfang der Rohdaten der Sensorik (bzw. Simulation) und zentraler MQTT-Ausgang."
+ },
+ {
+  "id": "krme4edffed8ef2",
+  "type": "comment",
+  "z": "krm0740c23ccca8",
+  "name": "Rohdaten-Eingang",
+  "x": 170,
+  "y": 40,
+  "wires": [],
+  "info": "Sensorik (oder Simulation) publiziert je Messgröße auf `kompressor/raw/<sensor>`:\n`{\"v\": <Zahl>, \"ts\": <Unix-ms>, \"src\": \"real\"|\"sim\", \"seq\": <laufende Nr.>}`\n\n`kompressor/raw/status` = `online`/`offline` (retained, Last Will des Sensorknotens).\nAlle ausgehenden MQTT-Nachrichten laufen über den Link \"MQTT senden\"."
+ },
+ {
+  "id": "krmf864e83936b5",
+  "type": "link out",
+  "z": "krm0740c23ccca8",
+  "name": "→ Validierung",
+  "x": 640,
+  "y": 120,
+  "mode": "link",
+  "links": [
+   "krmb40558ea2f36"
+  ]
+ },
+ {
+  "id": "krm9c9b3a8dbc17",
+  "type": "link out",
+  "z": "krm0740c23ccca8",
+  "name": "→ Datenbank",
+  "x": 640,
+  "y": 180,
+  "mode": "link",
+  "links": [
+   "krmef6b1dc7bdae"
+  ]
+ },
+ {
+  "id": "krm59151b8b69c1",
+  "type": "function",
+  "z": "krm0740c23ccca8",
+  "name": "Sensorknoten-Status",
+  "x": 470,
+  "y": 180,
+  "wires": [
+   [
+    "krm9c9b3a8dbc17"
+   ]
+  ],
+  "func": "const p = String(msg.payload === undefined || msg.payload === null ? '' : msg.payload).trim().toLowerCase();\nconst st = p === 'online' ? 'online' : (p === 'offline' ? 'offline' : undefined);\nconst prev = global.get('sensor_node_status');\nglobal.set('sensor_node_status', st);\nnode.status({ fill: st === 'online' ? 'green' : (st === 'offline' ? 'red' : 'grey'), shape: 'dot', text: st || 'nicht angemeldet' });\nif (prev === st) return null;\nreturn { payload: [{ rp: 'events', line: 'events,type=sensor_node value=' + (st === 'online' ? 1 : 0) + ',text=\"Sensorknoten: ' + (st || 'abgemeldet') + '\"' }] };",
+  "outputs": 1,
+  "timeout": 0,
+  "noerr": 0,
+  "initialize": "",
+  "finalize": "",
+  "libs": []
+ },
+ {
+  "id": "krmf0368222f1ba",
+  "type": "function",
+  "z": "krm0740c23ccca8",
+  "name": "Routing",
+  "x": 300,
+  "y": 140,
+  "wires": [
+   [
+    "krmf864e83936b5"
+   ],
+   [
+    "krm59151b8b69c1"
+   ]
+  ],
+  "func": "// raw/status = Verfügbarkeit des Sensorknotens (LWT), alles andere = Messwerte\nif (msg.topic.endsWith('/status')) return [null, msg];\nreturn [msg, null];",
+  "outputs": 2,
+  "timeout": 0,
+  "noerr": 0,
+  "initialize": "",
+  "finalize": "",
+  "libs": []
+ },
+ {
+  "id": "krmcd4c9428575c",
+  "type": "mqtt in",
+  "z": "krm0740c23ccca8",
+  "name": "Rohdaten",
+  "x": 130,
+  "y": 140,
+  "wires": [
+   [
+    "krmf0368222f1ba"
+   ]
+  ],
+  "topic": "kompressor/raw/+",
+  "qos": "1",
+  "datatype": "auto-detect",
+  "broker": "krm2924a2d011c2",
+  "nl": false,
+  "rap": true,
+  "rh": 0,
+  "inputs": 0
+ },
+ {
+  "id": "krm61214110e1cb",
+  "type": "mqtt out",
+  "z": "krm0740c23ccca8",
+  "name": "MQTT-Ausgang",
+  "x": 330,
+  "y": 300,
+  "wires": [],
+  "topic": "",
+  "qos": "1",
+  "retain": "",
+  "respTopic": "",
+  "contentType": "",
+  "userProps": "",
+  "correl": "",
+  "expiry": "",
+  "broker": "krm2924a2d011c2"
+ },
+ {
+  "id": "krm0dc083fc23f6",
+  "type": "link in",
+  "z": "krm0740c23ccca8",
+  "name": "MQTT senden",
+  "links": [
+   "krma88ba8f62435",
+   "krm264693b774bc",
+   "krm1eca33b5ba62",
+   "krm966f1c5a7888",
+   "krm217e479192fb",
+   "krm40629bbf189b",
+   "krme7209ac1de06",
+   "krm87279accca8f",
+   "krm595f96948e31",
+   "krm3f2a1ebb174e",
+   "krm21d2c32166e0",
+   "krm956a330917f3",
+   "krm800ac537baed"
+  ],
+  "x": 135,
+  "y": 300,
+  "wires": [
+   [
+    "krm61214110e1cb"
+   ]
+  ]
+ },
+ {
+  "id": "krme113b4eee9c5",
+  "type": "comment",
+  "z": "krm0740c23ccca8",
+  "name": "Zentraler MQTT-Ausgang",
+  "x": 170,
+  "y": 260,
+  "wires": [],
+  "info": "msg.topic / msg.payload / msg.retain werden aus der Nachricht übernommen."
+ },
+ {
+  "id": "krm7c2367b18e77",
+  "type": "tab",
+  "label": "02 Datenvalidierung",
+  "disabled": false,
+  "info": "Plausibilität, Zeitstempel, Duplikate."
+ },
+ {
+  "id": "krm0c10ce433213",
+  "type": "comment",
+  "z": "krm7c2367b18e77",
+  "name": "Validierung",
+  "x": 170,
+  "y": 40,
+  "wires": [],
+  "info": "Prüft jede Rohnachricht:\n1. bekannter Sensor, numerischer Wert, innerhalb des Messbereichs (cfg.sensors.*.min/max)\n2. Zeitstempel: fehlend oder > 30 s in der Zukunft → Empfangszeit; > 1 h alt → verworfen\n3. Duplikate: gleicher/älterer Zeitstempel oder gleiche `seq` je Sensor+Quelle → verworfen\n\nAusgang 1: gültig → Aufbereitung. Ausgang 2: ungültig → Fehlererkennung.\nZähler in `global.stats` (rx/valid/invalid/dup/ts_fixed) für die Systemdiagnose."
+ },
+ {
+  "id": "krm85a9f8641339",
+  "type": "link out",
+  "z": "krm7c2367b18e77",
+  "name": "→ Aufbereitung",
+  "x": 620,
+  "y": 120,
+  "mode": "link",
+  "links": [
+   "krm5985defc37a1"
+  ]
+ },
+ {
+  "id": "krm1fd46aa83cdf",
+  "type": "link out",
+  "z": "krm7c2367b18e77",
+  "name": "→ Fehlererkennung",
+  "x": 620,
+  "y": 180,
+  "mode": "link",
+  "links": [
+   "krm5127ddc5692c"
+  ]
+ },
+ {
+  "id": "krm99139f95d1b5",
+  "type": "function",
+  "z": "krm7c2367b18e77",
+  "name": "Validieren",
+  "x": 400,
+  "y": 140,
+  "wires": [
+   [
+    "krm85a9f8641339"
+   ],
+   [
+    "krm1fd46aa83cdf"
+   ]
+  ],
+  "func": "const cfg = global.get('cfg'); if (!cfg) return [null, null];\nconst stats = global.get('stats') || { rx: 0, valid: 0, invalid: 0, dup: 0, ts_fixed: 0 };\nstats.rx++;\nconst now = Date.now();\nconst sensor = msg.topic.split('/').pop();\nlet p = msg.payload;\nif (typeof p !== 'object' || p === null) p = { v: p };\nconst def = cfg.sensors[sensor];\nconst src = p.src === 'sim' ? 'sim' : 'real';\nfunction reject(reason) {\n    stats.invalid++; global.set('stats', stats);\n    node.status({ fill: 'red', shape: 'ring', text: sensor + ': ' + reason });\n    return [null, { topic: 'invalid', payload: { sensor: sensor, reason: reason, src: src, ts: now } }];\n}\nif (!def) return reject('unbekannter Sensor');\nconst v = (p.v === null || p.v === undefined || p.v === '') ? NaN : Number(p.v);\nif (!Number.isFinite(v)) return reject('kein gültiger Zahlenwert');\nif (v < def.min || v > def.max) return reject('außerhalb Messbereich: ' + v + ' ' + def.unit);\nlet ts = Number(p.ts), tsNote = null;\nif (!Number.isFinite(ts) || ts <= 0) { ts = now; tsNote = 'Zeitstempel fehlte'; }\nelse if (ts > now + cfg.ts_max_future_s * 1000) { ts = now; tsNote = 'Zeitstempel in der Zukunft, korrigiert'; }\nelse if (ts < now - cfg.ts_max_past_s * 1000) return reject('Zeitstempel zu alt');\nconst last = context.get('last') || {};\nconst key = sensor + '|' + src;\nconst l = last[key];\nif (l && (ts <= l.ts || (p.seq !== undefined && p.seq === l.seq))) {\n    stats.dup++; global.set('stats', stats);\n    node.status({ fill: 'yellow', shape: 'ring', text: sensor + ': Duplikat verworfen' });\n    return [null, null];\n}\nlast[key] = { ts: ts, seq: p.seq }; context.set('last', last);\nif (tsNote) stats.ts_fixed++;\nstats.valid++; global.set('stats', stats);\nnode.status({ fill: 'green', shape: 'dot', text: 'gültig ' + stats.valid + ' | ungültig ' + stats.invalid + ' | Duplikate ' + stats.dup });\nmsg.payload = { sensor: sensor, v: v, ts: ts, src: src, ts_note: tsNote };\nreturn [msg, null];",
+  "outputs": 2,
+  "timeout": 0,
+  "noerr": 0,
+  "initialize": "",
+  "finalize": "",
+  "libs": []
+ },
+ {
+  "id": "krmb40558ea2f36",
+  "type": "link in",
+  "z": "krm7c2367b18e77",
+  "name": "von Eingang",
+  "links": [
+   "krmf864e83936b5"
+  ],
+  "x": 175,
+  "y": 140,
+  "wires": [
+   [
+    "krm99139f95d1b5"
+   ]
+  ]
+ },
+ {
+  "id": "krm939c84589295",
+  "type": "tab",
+  "label": "03 Datenaufbereitung",
+  "disabled": false,
+  "info": "Aktuelle Werte, Änderungsraten, MQTT-Statuswerte, Datenbankpunkte."
+ },
+ {
+  "id": "krm0db586710836",
+  "type": "comment",
+  "z": "krm939c84589295",
+  "name": "Aufbereitung",
+  "x": 170,
+  "y": 40,
+  "wires": [],
+  "info": "- hält den letzten gültigen Wert je Sensor in `global.latest`\n- berechnet Änderungsraten (Druck bar/min, Temperaturen °C/min) über 60 s\n- publiziert aufbereitete Werte (retained) unter `kompressor/<gruppe>/<wert>` – gedrosselt: max. alle 10 s oder bei deutlicher Änderung\n- erzeugt InfluxDB-Punkte `sensor,sensor=<id>,source=<real|sim> value=…,rate=…`\n- leitet den Motorstrom an die Betriebszustandserkennung weiter"
+ },
+ {
+  "id": "krma88ba8f62435",
+  "type": "link out",
+  "z": "krm939c84589295",
+  "name": "→ MQTT",
+  "x": 640,
+  "y": 100,
+  "mode": "link",
+  "links": [
+   "krm0dc083fc23f6"
+  ]
+ },
+ {
+  "id": "krmdf98123fdd0a",
+  "type": "link out",
+  "z": "krm939c84589295",
+  "name": "→ Datenbank",
+  "x": 640,
+  "y": 140,
+  "mode": "link",
+  "links": [
+   "krmef6b1dc7bdae"
+  ]
+ },
+ {
+  "id": "krmfb5913b3d587",
+  "type": "link out",
+  "z": "krm939c84589295",
+  "name": "→ Betriebszustand",
+  "x": 640,
+  "y": 180,
+  "mode": "link",
+  "links": [
+   "krm0054bce1cc94"
+  ]
+ },
+ {
+  "id": "krm979e4a014f59",
+  "type": "function",
+  "z": "krm939c84589295",
+  "name": "Aufbereiten",
+  "x": 420,
+  "y": 140,
+  "wires": [
+   [
+    "krma88ba8f62435"
+   ],
+   [
+    "krmdf98123fdd0a"
+   ],
+   [
+    "krmfb5913b3d587"
+   ]
+  ],
+  "func": "const cfg = global.get('cfg'); const m = msg.payload; const def = cfg.sensors[m.sensor];\nconst now = Date.now();\nconst latest = global.get('latest') || {};\nlatest[m.sensor] = { v: m.v, ts: m.ts, src: m.src, rx: now };\nglobal.set('latest', latest);\nglobal.set('last_rx', now);\nglobal.set('source_last', m.src);\n// HA-Aktualisierung drosseln (Recorder-Datenbank schonen): höchstens alle 10 s oder bei deutlicher Änderung.\n// InfluxDB erhält weiterhin jeden Messwert.\nconst DEADBAND = { pressure_final: 2, temp_stage1: 1, temp_stage2: 1, temp_stage3: 1, temp_coil12: 1, temp_coil23: 1, temp_room: 0.2, motor_current: 0.5, supply_voltage: 5 };\nconst pub = context.get('pub') || {};\nconst lp = pub[m.sensor];\n// Kennwerte des laufenden Betriebszyklus sammeln (für Zyklus-Ereignis und Diagnose)\nconst run = global.get('run_state');\nif (run && run.running && run.src === m.src) {\n    let acc = global.get('cycle_acc');\n    if (!acc || acc.start !== run.since) {\n        // Ausgangstemperaturen = letzte Werte vor/bei Motorstart\n        const t0 = {};\n        for (const k of ['temp_stage1', 'temp_coil12', 'temp_stage2', 'temp_coil23', 'temp_stage3', 'temp_room']) if (latest[k] && now - latest[k].rx < 120000) t0[k] = latest[k].v;\n        acc = { start: run.since, src: m.src, p_start: null, p_max: null, t_max: {}, t0: t0, tr_sum: 0, tr_n: 0, i_max: null, i_sum: 0, i_n: 0, u_sum: 0, u_n: 0 };\n    }\n    if (m.sensor === 'pressure_final') { if (acc.p_start === null) acc.p_start = m.v; acc.p_max = Math.max(acc.p_max === null ? m.v : acc.p_max, m.v); }\n    else if (m.sensor === 'temp_room') { acc.tr_sum += m.v; acc.tr_n++; }\n    else if (m.sensor.startsWith('temp_')) acc.t_max[m.sensor] = Math.max(acc.t_max[m.sensor] === undefined ? m.v : acc.t_max[m.sensor], m.v);\n    else if (m.sensor === 'motor_current' && m.ts - run.since > 5000) { acc.i_max = Math.max(acc.i_max === null ? m.v : acc.i_max, m.v); acc.i_sum += m.v; acc.i_n++; }\n    else if (m.sensor === 'supply_voltage') { acc.u_sum += m.v; acc.u_n++; }\n    global.set('cycle_acc', acc);\n}\nconst mq = [];\nif (!lp || now - lp.t >= 10000 || Math.abs(m.v - lp.v) >= (DEADBAND[m.sensor] || 0)) {\n    pub[m.sensor] = { t: now, v: m.v }; context.set('pub', pub);\n    mq.push({ topic: 'kompressor/' + def.topic, payload: String(Number(m.v.toFixed(def.dec))), retain: true });\n}\nconst rates = global.get('rates') || {};\nif (m.sensor === 'pressure_final' || m.sensor.startsWith('temp_')) {\n    const h = (context.get('hist_' + m.sensor) || []).filter(x => x[0] >= m.ts - 60000);\n    h.push([m.ts, m.v]); context.set('hist_' + m.sensor, h);\n    const dt = h[h.length - 1][0] - h[0][0];\n    rates[m.sensor] = dt >= 20000 ? (h[h.length - 1][1] - h[0][1]) / (dt / 60000) : null;\n    global.set('rates', rates);\n    if (m.sensor === 'pressure_final' && rates[m.sensor] !== null && mq.length)\n        mq.push({ topic: 'kompressor/pressure/rate', payload: String(Number(rates[m.sensor].toFixed(1))), retain: true });\n}\nif (now - (context.get('last_update_pub') || 0) >= 5000) {\n    context.set('last_update_pub', now);\n    mq.push({ topic: 'kompressor/last_update', payload: new Date(m.ts).toISOString(), retain: true });\n}\nlet line = 'sensor,sensor=' + m.sensor + ',source=' + m.src + ' value=' + m.v;\nif (rates[m.sensor] !== undefined && rates[m.sensor] !== null) line += ',rate=' + rates[m.sensor].toFixed(3);\nline += ' ' + m.ts;\nnode.status({ fill: 'green', shape: 'dot', text: m.sensor + ' = ' + m.v + ' ' + def.unit + ' (' + m.src + ')' });\nreturn [mq, { payload: [line] }, m.sensor === 'motor_current' ? msg : null];",
+  "outputs": 3,
+  "timeout": 0,
+  "noerr": 0,
+  "initialize": "",
+  "finalize": "",
+  "libs": []
+ },
+ {
+  "id": "krm5985defc37a1",
+  "type": "link in",
+  "z": "krm939c84589295",
+  "name": "von Validierung",
+  "links": [
+   "krm85a9f8641339"
+  ],
+  "x": 185,
+  "y": 140,
+  "wires": [
+   [
+    "krm979e4a014f59"
+   ]
+  ]
+ },
+ {
+  "id": "krm2dec029c3344",
+  "type": "tab",
+  "label": "04 Betriebszustand",
+  "disabled": false,
+  "info": "Laufzustand des Motors aus dem Motorstrom (Hysterese + Entprellung)."
+ },
+ {
+  "id": "krm2f33abb01421",
+  "type": "comment",
+  "z": "krm2dec029c3344",
+  "name": "Betriebszustandserkennung",
+  "x": 170,
+  "y": 40,
+  "wires": [],
+  "info": "Motor läuft, wenn Motorstrom ≥ `cfg.running.on_a`; steht, wenn ≤ `cfg.running.off_a`\n(Hysterese). Ein Wechsel wird erst nach `debounce_s` übernommen (Anlaufspitzen/Rauschen).\nStart/Stopp → Betriebsstundenerfassung + Ereignis in InfluxDB (RP `events`).\nRein beobachtend – es werden keinerlei Steuerbefehle erzeugt."
+ },
+ {
+  "id": "krm264693b774bc",
+  "type": "link out",
+  "z": "krm2dec029c3344",
+  "name": "→ MQTT",
+  "x": 620,
+  "y": 100,
+  "mode": "link",
+  "links": [
+   "krm0dc083fc23f6"
+  ]
+ },
+ {
+  "id": "krm4542eb7e9191",
+  "type": "link out",
+  "z": "krm2dec029c3344",
+  "name": "→ Datenbank",
+  "x": 620,
+  "y": 140,
+  "mode": "link",
+  "links": [
+   "krmef6b1dc7bdae"
+  ]
+ },
+ {
+  "id": "krm20adf721820d",
+  "type": "link out",
+  "z": "krm2dec029c3344",
+  "name": "→ Betriebsstunden",
+  "x": 620,
+  "y": 180,
+  "mode": "link",
+  "links": [
+   "krmd87aaf027b72"
+  ]
+ },
+ {
+  "id": "krmfafb0987457b",
+  "type": "function",
+  "z": "krm2dec029c3344",
+  "name": "Laufzustand erkennen",
+  "x": 400,
+  "y": 140,
+  "wires": [
+   [
+    "krm264693b774bc"
+   ],
+   [
+    "krm4542eb7e9191"
+   ],
+   [
+    "krm20adf721820d"
+   ]
+  ],
+  "func": "const cfg = global.get('cfg'); const m = msg.payload;\nlet st = context.get('st') || { running: false, cand: null, cand_since: 0, since: m.ts, published: false };\nst.src = m.src;\nconst want = st.running ? (m.v > cfg.running.off_a) : (m.v >= cfg.running.on_a);\nlet changed = false;\nif (want === st.running) st.cand = null;\nelse {\n    if (st.cand !== want) { st.cand = want; st.cand_since = m.ts; }\n    if (m.ts - st.cand_since >= cfg.running.debounce_s * 1000) { st.running = want; st.since = st.cand_since; st.cand = null; changed = true; }\n}\nconst out = [];\nif (changed || !st.published) { st.published = true; out.push({ topic: 'kompressor/motor/running', payload: st.running ? 'ON' : 'OFF', retain: true }); }\ncontext.set('st', st);\nglobal.set('run_state', { running: st.running, since: st.since, src: st.src, ts: m.ts });\nconst lines = ['state,source=' + m.src + ' running=' + (st.running ? 1 : 0) + ' ' + m.ts];\nlet ev = null;\nif (changed) {\n    ev = { topic: st.running ? 'start' : 'stop', payload: { ts: st.since, src: st.src } };\n    lines.push({ rp: 'events', line: 'events,type=' + (st.running ? 'motor_start' : 'motor_stop') + ',source=' + st.src +\n        ' value=1,text=\"' + (st.running ? 'Motor gestartet' : 'Motor gestoppt') + '\" ' + st.since });\n}\nnode.status({ fill: st.running ? 'green' : 'grey', shape: 'dot', text: (st.running ? 'läuft' : 'steht') + ' (' + st.src + ')' });\nreturn [out, { payload: lines }, ev];",
+  "outputs": 3,
+  "timeout": 0,
+  "noerr": 0,
+  "initialize": "",
+  "finalize": "",
+  "libs": []
+ },
+ {
+  "id": "krm0054bce1cc94",
+  "type": "link in",
+  "z": "krm2dec029c3344",
+  "name": "Motorstrom",
+  "links": [
+   "krmfb5913b3d587"
+  ],
+  "x": 175,
+  "y": 140,
+  "wires": [
+   [
+    "krmfafb0987457b"
+   ]
+  ]
+ },
+ {
+  "id": "krm074428cc776e",
+  "type": "tab",
+  "label": "05 Betriebsstunden",
+  "disabled": false,
+  "info": "Gesamtbetriebsstunden, Stunden seit Wartung/Filterwechsel, Starts, Zyklen."
+ },
+ {
+  "id": "krma99008d7ee37",
+  "type": "comment",
+  "z": "krm074428cc776e",
+  "name": "Betriebsstundenerfassung",
+  "x": 170,
+  "y": 40,
+  "wires": [],
+  "info": "Zähler getrennt je Quelle (`real` / `sim`), damit Simulationsdaten niemals die\nechten Betriebsstunden verfälschen.\n\n**Persistenz:** retained MQTT `kompressor/counters` (Mosquitto speichert persistent),\nzusätzlich alle 10 s in InfluxDB (`counter`). Beim Start: erst MQTT laden,\nsonst aus InfluxDB wiederherstellen, sonst neu initialisieren.\n\nGezählt wird nur, wenn der Motor läuft UND der Motorstrom aktuell ist (kein Zählen\nbei Datenausfall). Lücken > 60 s (Neustart) werden nicht mitgezählt."
+ },
+ {
+  "id": "krm1eca33b5ba62",
+  "type": "link out",
+  "z": "krm074428cc776e",
+  "name": "→ MQTT",
+  "x": 760,
+  "y": 300,
+  "mode": "link",
+  "links": [
+   "krm0dc083fc23f6"
+  ]
+ },
+ {
+  "id": "krm62208ada4435",
+  "type": "link out",
+  "z": "krm074428cc776e",
+  "name": "→ Datenbank",
+  "x": 760,
+  "y": 340,
+  "mode": "link",
+  "links": [
+   "krmef6b1dc7bdae"
+  ]
+ },
+ {
+  "id": "krm5b75126eb183",
+  "type": "link out",
+  "z": "krm074428cc776e",
+  "name": "→ Wartungsstatus",
+  "x": 760,
+  "y": 380,
+  "mode": "link",
+  "links": [
+   "krm01bf966ae700"
+  ]
+ },
+ {
+  "id": "krmf56eeaedef12",
+  "type": "function",
+  "z": "krm074428cc776e",
+  "name": "Betriebsstunden-Zähler",
+  "x": 540,
+  "y": 340,
+  "wires": [
+   [
+    "krm1eca33b5ba62"
+   ],
+   [
+    "krm62208ada4435"
+   ],
+   [
+    "krm5b75126eb183"
+   ]
+  ],
+  "func": "if (!global.get('counters_loaded')) return null;\nconst cfg = global.get('cfg');\nconst counters = global.get('counters') || {};\nconst blank = () => ({ total_s: 0, since_maint_s: 0, since_filter_s: 0, starts: 0, last_cycle_s: null, cycle_start: null });\nfor (const s of ['sim', 'real']) if (!counters[s]) counters[s] = blank();\nconst now = Date.now();\nconst run = global.get('run_state');\nconst lastRx = global.get('last_rx') || 0;\nconst fresh = now - lastRx <= cfg.comm_timeout_s * 1000;\nconst display = (fresh && global.get('source_last')) || context.get('display') || 'real';\ncontext.set('display', display);\nconst lines = [];\nconst out_extra = [];\nconst ev = (type, src, value, text) => lines.push({ rp: 'events', line: 'events,type=' + type + ',source=' + src + ' value=' + value + ',text=\"' + text + '\"' });\nswitch (msg.topic) {\n    case 'start': { const c = counters[msg.payload.src]; c.starts += 1; c.cycle_start = msg.payload.ts; break; }\n    case 'stop': {\n        const c = counters[msg.payload.src];\n        if (c.cycle_start) {\n            const dur = Math.max(0, (msg.payload.ts - c.cycle_start) / 1000);\n            c.last_cycle_s = dur;\n            const acc = global.get('cycle_acc');\n            let f = 'value=' + dur.toFixed(0), info = '';\n            if (acc && acc.start === c.cycle_start && acc.src === msg.payload.src) {\n                if (acc.p_start !== null && dur > 0) {\n                    const dp = acc.p_max - acc.p_start, rate = dp / (dur / 60);\n                    const comparable = dur >= cfg.cycle.min_duration_s && dp >= cfg.cycle.min_delta_bar;\n                    f += ',p_start=' + acc.p_start.toFixed(1) + ',p_end=' + acc.p_max.toFixed(1) + ',rate=' + rate.toFixed(2) + ',comparable=' + (comparable ? 1 : 0);\n                    info = ', ' + acc.p_start.toFixed(0) + '→' + acc.p_max.toFixed(0) + ' bar, ' + rate.toFixed(1) + ' bar/min';\n                    if (comparable) out_extra.push({ topic: 'kompressor/cycle/last_rate', payload: rate.toFixed(2), retain: true });\n                }\n                const SH = { temp_stage1: 't1', temp_coil12: 't12', temp_stage2: 't2', temp_coil23: 't23', temp_stage3: 't3', temp_room: 'tr' };\n                for (const [k, sh] of Object.entries(SH)) {\n                    if (acc.t_max[k] !== undefined) f += ',' + sh + '_max=' + acc.t_max[k].toFixed(1);\n                    if (acc.t0 && acc.t0[k] !== undefined) f += ',' + sh + '_start=' + acc.t0[k].toFixed(1);\n                }\n                if (acc.tr_n) f += ',tr_mean=' + (acc.tr_sum / acc.tr_n).toFixed(1);\n                if (acc.i_n) f += ',i_max=' + acc.i_max.toFixed(2) + ',i_mean=' + (acc.i_sum / acc.i_n).toFixed(2);\n                if (acc.u_n) f += ',u_mean=' + (acc.u_sum / acc.u_n).toFixed(1);\n                f += ',start=' + c.cycle_start;\n            }\n            lines.push({ rp: 'events', line: 'events,type=cycle,source=' + msg.payload.src + ' ' + f + ',text=\"Betriebszyklus beendet: ' + (dur / 60).toFixed(1) + ' min' + info + '\" ' + msg.payload.ts });\n        }\n        c.cycle_start = null; break;\n    }\n    case 'reset_maint': {\n        const c = counters[display];\n        ev('maintenance', display, (c.since_maint_s / 3600).toFixed(2), 'Wartung erfasst bei ' + (c.total_s / 3600).toFixed(1) + ' Bh (' + (c.since_maint_s / 3600).toFixed(1) + ' h seit letzter Wartung)');\n        c.since_maint_s = 0; break;\n    }\n    case 'reset_filter': {\n        const c = counters[display];\n        ev('filter_change', display, (c.since_filter_s / 3600).toFixed(2), 'Filterwechsel erfasst bei ' + (c.total_s / 3600).toFixed(1) + ' Bh (' + (c.since_filter_s / 3600).toFixed(1) + ' h seit letztem Wechsel)');\n        c.since_filter_s = 0; break;\n    }\n    default: {\n        const last = context.get('last_tick') || now; const dt = (now - last) / 1000; context.set('last_tick', now);\n        const mc = (global.get('latest') || {}).motor_current;\n        const mcFresh = mc && (now - mc.rx) <= cfg.sensors.motor_current.stale_s * 1000;\n        if (run && run.running && mcFresh && dt > 0 && dt <= 60) {\n            const c = counters[run.src]; c.total_s += dt; c.since_maint_s += dt; c.since_filter_s += dt;\n        }\n    }\n}\nglobal.set('counters', counters);\nconst c = counters[display];\nconst curCycle = (run && run.running && run.src === display && c.cycle_start) ? (now - c.cycle_start) / 60000 : 0;\nconst out = [\n    { topic: 'kompressor/counters', payload: JSON.stringify(counters), retain: true },\n    { topic: 'kompressor/operating_hours', payload: (c.total_s / 3600).toFixed(2), retain: true },\n    { topic: 'kompressor/maintenance/hours_since', payload: (c.since_maint_s / 3600).toFixed(2), retain: true },\n    { topic: 'kompressor/maintenance/filter_hours_since', payload: (c.since_filter_s / 3600).toFixed(2), retain: true },\n    { topic: 'kompressor/motor/starts', payload: String(c.starts), retain: true },\n    { topic: 'kompressor/cycle/current_minutes', payload: curCycle.toFixed(1), retain: true },\n    { topic: 'kompressor/cycle/last_minutes', payload: c.last_cycle_s === null ? 'None' : (c.last_cycle_s / 60).toFixed(1), retain: true },\n    ...out_extra\n];\nfor (const s of ['sim', 'real']) {\n    const k = counters[s];\n    const cyc = (run && run.running && run.src === s && k.cycle_start) ? (now - k.cycle_start) / 1000 : 0;\n    lines.push('counter,source=' + s + ' total_s=' + k.total_s.toFixed(1) + ',since_maint_s=' + k.since_maint_s.toFixed(1) +\n               ',since_filter_s=' + k.since_filter_s.toFixed(1) + ',starts=' + k.starts + ',cycle_s=' + cyc.toFixed(0) + ' ' + now);\n}\nnode.status({ fill: 'green', shape: 'dot', text: display + ': ' + (c.total_s / 3600).toFixed(2) + ' Bh, ' + c.starts + ' Starts (' + (global.get('counters_origin') || '') + ')' });\nreturn [out, lines.length ? { payload: lines } : null,\n        { payload: { display: display, total_h: c.total_s / 3600, since_maint_h: c.since_maint_s / 3600, since_filter_h: c.since_filter_s / 3600 } }];",
+  "outputs": 3,
+  "timeout": 0,
+  "noerr": 0,
+  "initialize": "",
+  "finalize": "",
+  "libs": []
+ },
+ {
+  "id": "krmeda33ae2e528",
+  "type": "inject",
+  "z": "krm074428cc776e",
+  "name": "alle 10 s",
+  "x": 170,
+  "y": 300,
+  "wires": [
+   [
+    "krmf56eeaedef12"
+   ]
+  ],
+  "props": [
+   {
+    "p": "payload"
+   },
+   {
+    "p": "topic",
+    "vt": "str"
+   }
+  ],
+  "repeat": "10",
+  "crontab": "",
+  "once": true,
+  "onceDelay": "10",
+  "topic": "tick",
+  "payload": "",
+  "payloadType": "date"
+ },
+ {
+  "id": "krmd87aaf027b72",
+  "type": "link in",
+  "z": "krm074428cc776e",
+  "name": "Zähler-Ereignisse",
+  "links": [
+   "krm20adf721820d",
+   "krm50932f0681a0",
+   "krm00ff05302fcb"
+  ],
+  "x": 175,
+  "y": 360,
+  "wires": [
+   [
+    "krmf56eeaedef12"
+   ]
+  ]
+ },
+ {
+  "id": "krmb21e040cafad",
+  "type": "function",
+  "z": "krm074428cc776e",
+  "name": "Zähler aus MQTT laden",
+  "x": 420,
+  "y": 120,
+  "wires": [],
+  "func": "if (global.get('counters_loaded')) return null;\nconst p = msg.payload;\nif (p && typeof p === 'object' && (p.sim || p.real)) {\n    global.set('counters', p); global.set('counters_loaded', true); global.set('counters_origin', 'MQTT (retained)');\n    node.status({ fill: 'green', shape: 'dot', text: 'aus MQTT geladen' });\n}\nreturn null;",
+  "outputs": 0,
+  "timeout": 0,
+  "noerr": 0,
+  "initialize": "",
+  "finalize": "",
+  "libs": []
+ },
+ {
+  "id": "krm6dee050c2508",
+  "type": "mqtt in",
+  "z": "krm074428cc776e",
+  "name": "gespeicherte Zähler",
+  "x": 170,
+  "y": 120,
+  "wires": [
+   [
+    "krmb21e040cafad"
+   ]
+  ],
+  "topic": "kompressor/counters",
+  "qos": "1",
+  "datatype": "json",
+  "broker": "krm2924a2d011c2",
+  "nl": false,
+  "rap": true,
+  "rh": 0,
+  "inputs": 0
+ },
+ {
+  "id": "krma49a08f97bb3",
+  "type": "function",
+  "z": "krm074428cc776e",
+  "name": "Fallback auswerten",
+  "x": 800,
+  "y": 180,
+  "wires": [],
+  "func": "if (global.get('counters_loaded')) return null;\nconst counters = {};\nlet origin = 'neu initialisiert (keine gespeicherten Zähler)';\ntry {\n    if (Number(msg.statusCode) !== 200) throw new Error('HTTP ' + msg.statusCode);\n    const res = typeof msg.payload === 'string' ? JSON.parse(msg.payload) : msg.payload;\n    const series = (res.results && res.results[0] && res.results[0].series) || [];\n    for (const s of series) {\n        const o = {}; s.columns.forEach((c, i) => o[c] = s.values[0][i]);\n        counters[s.tags.source] = { total_s: o.total_s || 0, since_maint_s: o.since_maint_s || 0, since_filter_s: o.since_filter_s || 0,\n                                    starts: o.starts || 0, last_cycle_s: null, cycle_start: null };\n    }\n    if (series.length) origin = 'aus InfluxDB wiederhergestellt';\n} catch (e) { origin = 'neu initialisiert (InfluxDB: ' + e.message + ')'; }\nglobal.set('counters', counters); global.set('counters_loaded', true); global.set('counters_origin', origin);\nnode.status({ fill: origin.startsWith('neu') ? 'yellow' : 'green', shape: 'dot', text: origin });\nreturn null;",
+  "outputs": 0,
+  "timeout": 0,
+  "noerr": 0,
+  "initialize": "",
+  "finalize": "",
+  "libs": []
+ },
+ {
+  "id": "krmc8e82fd19f2a",
+  "type": "http request",
+  "z": "krm074428cc776e",
+  "name": "InfluxDB abfragen",
+  "x": 610,
+  "y": 180,
+  "wires": [
+   [
+    "krma49a08f97bb3"
+   ]
+  ],
+  "method": "use",
+  "ret": "txt",
+  "paytoqs": "ignore",
+  "url": "",
+  "tls": "",
+  "persist": false,
+  "proxy": "",
+  "insecureHTTPParser": false,
+  "authType": "basic",
+  "senderr": false,
+  "headers": []
+ },
+ {
+  "id": "krm92b16d66b4e3",
+  "type": "function",
+  "z": "krm074428cc776e",
+  "name": "Fallback: InfluxDB",
+  "x": 410,
+  "y": 180,
+  "wires": [
+   [
+    "krmc8e82fd19f2a"
+   ]
+  ],
+  "func": "if (global.get('counters_loaded')) { node.status({ fill: 'green', shape: 'dot', text: 'nicht nötig' }); return null; }\nconst q = 'SELECT last(total_s) AS total_s, last(since_maint_s) AS since_maint_s, last(since_filter_s) AS since_filter_s, last(starts) AS starts FROM \"raw\".\"counter\" GROUP BY \"source\"';\nmsg.url = 'http://a0d7b954-influxdb:8086/query?db=kompressor&q=' + encodeURIComponent(q);\nmsg.method = 'GET';\nnode.status({ fill: 'yellow', shape: 'dot', text: 'frage InfluxDB ab' });\nreturn msg;",
+  "outputs": 1,
+  "timeout": 0,
+  "noerr": 0,
+  "initialize": "",
+  "finalize": "",
+  "libs": []
+ },
+ {
+  "id": "krm8acf53ba9440",
+  "type": "inject",
+  "z": "krm074428cc776e",
+  "name": "nach 8 s",
+  "x": 170,
+  "y": 180,
+  "wires": [
+   [
+    "krm92b16d66b4e3"
+   ]
+  ],
+  "props": [
+   {
+    "p": "payload"
+   },
+   {
+    "p": "topic",
+    "vt": "str"
+   }
+  ],
+  "repeat": "",
+  "crontab": "",
+  "once": true,
+  "onceDelay": "8",
+  "topic": "tick",
+  "payload": "",
+  "payloadType": "date"
+ },
+ {
+  "id": "krm8b58b3bbdd41",
+  "type": "function",
+  "z": "krm074428cc776e",
+  "name": "Notfall-Initialisierung",
+  "x": 420,
+  "y": 230,
+  "wires": [],
+  "func": "if (global.get('counters_loaded')) return null;\nglobal.set('counters', {}); global.set('counters_loaded', true);\nglobal.set('counters_origin', 'neu initialisiert (weder MQTT noch InfluxDB verfügbar)');\nnode.status({ fill: 'red', shape: 'dot', text: 'neu initialisiert' });\nreturn null;",
+  "outputs": 0,
+  "timeout": 0,
+  "noerr": 0,
+  "initialize": "",
+  "finalize": "",
+  "libs": []
+ },
+ {
+  "id": "krm5f7dabc3d852",
+  "type": "inject",
+  "z": "krm074428cc776e",
+  "name": "nach 25 s",
+  "x": 170,
+  "y": 230,
+  "wires": [
+   [
+    "krm8b58b3bbdd41"
+   ]
+  ],
+  "props": [
+   {
+    "p": "payload"
+   },
+   {
+    "p": "topic",
+    "vt": "str"
+   }
+  ],
+  "repeat": "",
+  "crontab": "",
+  "once": true,
+  "onceDelay": "25",
+  "topic": "tick",
+  "payload": "",
+  "payloadType": "date"
+ },
+ {
+  "id": "krm898ed174454a",
+  "type": "tab",
+  "label": "06 Wartungsmanagement",
+  "disabled": false,
+  "info": "Wartungs-/Filterintervalle (konfigurierbar, noch nicht festgelegt) und Status."
+ },
+ {
+  "id": "krm6406c88ce862",
+  "type": "comment",
+  "z": "krm898ed174454a",
+  "name": "Wartungsmanagement",
+  "x": 170,
+  "y": 40,
+  "wires": [],
+  "info": "Intervalle werden in Home Assistant gesetzt (MQTT-Number, Wert 0 = **noch nicht festgelegt**).\nDie echten Intervalle dürfen erst nach Prüfung der Herstellerunterlagen eingetragen werden.\n\n- `kompressor/maintenance/config/<interval_h|filter_interval_h>` (retained Zustand)\n- `…/config/<key>/set` (Befehl aus HA)\n- `kompressor/maintenance/<service_done|filter_done>/set` (Taster in HA → Zähler zurücksetzen + Ereignis)\n- Status: `ok`, `bald_faellig` (≥ 90 %), `faellig`, `nicht_festgelegt`"
+ },
+ {
+  "id": "krm966f1c5a7888",
+  "type": "link out",
+  "z": "krm898ed174454a",
+  "name": "→ MQTT",
+  "x": 720,
+  "y": 120,
+  "mode": "link",
+  "links": [
+   "krm0dc083fc23f6"
+  ]
+ },
+ {
+  "id": "krmbbeade76ab61",
+  "type": "link out",
+  "z": "krm898ed174454a",
+  "name": "→ Datenbank",
+  "x": 720,
+  "y": 160,
+  "mode": "link",
+  "links": [
+   "krmef6b1dc7bdae"
+  ]
+ },
+ {
+  "id": "krm50932f0681a0",
+  "type": "link out",
+  "z": "krm898ed174454a",
+  "name": "→ Betriebsstunden",
+  "x": 720,
+  "y": 280,
+  "mode": "link",
+  "links": [
+   "krmd87aaf027b72"
+  ]
+ },
+ {
+  "id": "krmbe690e8a6f84",
+  "type": "function",
+  "z": "krm898ed174454a",
+  "name": "Intervall-Konfiguration laden",
+  "x": 470,
+  "y": 220,
+  "wires": [],
+  "func": "const key = msg.topic.split('/').pop();\nif (!['interval_h', 'filter_interval_h', 'pressure_setpoint_bar', 'rate_reference_bar_min'].includes(key)) return null;\nconst mc = global.get('maint_cfg') || {};\nconst v = Number(msg.payload);\nmc[key] = Number.isFinite(v) && v > 0 ? v : null;\nglobal.set('maint_cfg', mc);\nnode.status({ fill: 'green', shape: 'dot', text: JSON.stringify(mc) });\nreturn null;",
+  "outputs": 0,
+  "timeout": 0,
+  "noerr": 0,
+  "initialize": "",
+  "finalize": "",
+  "libs": []
+ },
+ {
+  "id": "krm05a17b2d56f0",
+  "type": "mqtt in",
+  "z": "krm898ed174454a",
+  "name": "Intervalle (Zustand)",
+  "x": 180,
+  "y": 220,
+  "wires": [
+   [
+    "krmbe690e8a6f84"
+   ]
+  ],
+  "topic": "kompressor/maintenance/config/+",
+  "qos": "1",
+  "datatype": "auto-detect",
+  "broker": "krm2924a2d011c2",
+  "nl": false,
+  "rap": true,
+  "rh": 0,
+  "inputs": 0
+ },
+ {
+  "id": "krm6b9cba6c9adf",
+  "type": "function",
+  "z": "krm898ed174454a",
+  "name": "Intervall setzen",
+  "x": 450,
+  "y": 140,
+  "wires": [
+   [
+    "krm966f1c5a7888"
+   ],
+   [
+    "krmbbeade76ab61"
+   ]
+  ],
+  "func": "const tp = msg.topic.split('/'); const key = tp[tp.lastIndexOf('config') + 1];   // <präfix>/maintenance/config/<key>/set\nif (!['interval_h', 'filter_interval_h', 'pressure_setpoint_bar', 'rate_reference_bar_min'].includes(key)) return [null, null];\nconst v = Number(msg.payload);\nconst val = Number.isFinite(v) && v > 0 ? v : 0;\nconst label = { interval_h: 'Wartungsintervall', filter_interval_h: 'Filterwechselintervall', pressure_setpoint_bar: 'Enddruck-Sollwert (Anzeige)', rate_reference_bar_min: 'Referenz Druckanstieg' }[key];\nconst unit = { interval_h: ' h', filter_interval_h: ' h', pressure_setpoint_bar: ' bar', rate_reference_bar_min: ' bar/min' }[key];\nreturn [{ topic: 'kompressor/maintenance/config/' + key, payload: String(val), retain: true },\n        { payload: [{ rp: 'events', line: 'events,type=maintenance_config,key=' + key + ' value=' + val + ',text=\"' + label + ' auf ' + (val ? val + unit : 'nicht festgelegt') + ' gesetzt\"' }] }];",
+  "outputs": 2,
+  "timeout": 0,
+  "noerr": 0,
+  "initialize": "",
+  "finalize": "",
+  "libs": []
+ },
+ {
+  "id": "krm9ca225e103c0",
+  "type": "mqtt in",
+  "z": "krm898ed174454a",
+  "name": "Intervalle (Befehl aus HA)",
+  "x": 190,
+  "y": 140,
+  "wires": [
+   [
+    "krm6b9cba6c9adf"
+   ]
+  ],
+  "topic": "kompressor/maintenance/config/+/set",
+  "qos": "1",
+  "datatype": "auto-detect",
+  "broker": "krm2924a2d011c2",
+  "nl": false,
+  "rap": true,
+  "rh": 0,
+  "inputs": 0
+ },
+ {
+  "id": "krm6f3962f0e34a",
+  "type": "function",
+  "z": "krm898ed174454a",
+  "name": "Standardwerte (0 = nicht festgelegt)",
+  "x": 480,
+  "y": 80,
+  "wires": [
+   [
+    "krm966f1c5a7888"
+   ]
+  ],
+  "func": "// Falls noch nie ein Intervall gesetzt wurde: 0 (= nicht festgelegt) publizieren, damit HA einen Zustand hat\nconst mc = global.get('maint_cfg') || {};\nconst out = [];\nfor (const k of ['interval_h', 'filter_interval_h', 'pressure_setpoint_bar', 'rate_reference_bar_min']) if (mc[k] === undefined) {\n    mc[k] = null; out.push({ topic: 'kompressor/maintenance/config/' + k, payload: '0', retain: true });\n}\nglobal.set('maint_cfg', mc);\nreturn [out];",
+  "outputs": 1,
+  "timeout": 0,
+  "noerr": 0,
+  "initialize": "",
+  "finalize": "",
+  "libs": []
+ },
+ {
+  "id": "krm9086111db412",
+  "type": "inject",
+  "z": "krm898ed174454a",
+  "name": "nach 6 s",
+  "x": 170,
+  "y": 80,
+  "wires": [
+   [
+    "krm6f3962f0e34a"
+   ]
+  ],
+  "props": [
+   {
+    "p": "payload"
+   },
+   {
+    "p": "topic",
+    "vt": "str"
+   }
+  ],
+  "repeat": "",
+  "crontab": "",
+  "once": true,
+  "onceDelay": "6",
+  "topic": "tick",
+  "payload": "",
+  "payloadType": "date"
+ },
+ {
+  "id": "krma781570e92d0",
+  "type": "function",
+  "z": "krm898ed174454a",
+  "name": "Wartung / Filter erfasst",
+  "x": 460,
+  "y": 280,
+  "wires": [
+   [
+    "krm50932f0681a0"
+   ]
+  ],
+  "func": "const tp = msg.topic.split('/'); const what = tp[tp.length - 2];               // <präfix>/maintenance/<what>/set\nif (what === 'service_done') return { topic: 'reset_maint' };\nif (what === 'filter_done') return { topic: 'reset_filter' };\nreturn null;",
+  "outputs": 1,
+  "timeout": 0,
+  "noerr": 0,
+  "initialize": "",
+  "finalize": "",
+  "libs": []
+ },
+ {
+  "id": "krm424ce74312a5",
+  "type": "mqtt in",
+  "z": "krm898ed174454a",
+  "name": "Taster (aus HA)",
+  "x": 170,
+  "y": 280,
+  "wires": [
+   [
+    "krma781570e92d0"
+   ]
+  ],
+  "topic": "kompressor/maintenance/+/set",
+  "qos": "1",
+  "datatype": "auto-detect",
+  "broker": "krm2924a2d011c2",
+  "nl": false,
+  "rap": true,
+  "rh": 0,
+  "inputs": 0
+ },
+ {
+  "id": "krm581417bac930",
+  "type": "link out",
+  "z": "krm898ed174454a",
+  "name": "→ Datenbank  ",
+  "x": 720,
+  "y": 460,
+  "mode": "link",
+  "links": [
+   "krmef6b1dc7bdae"
+  ]
+ },
+ {
+  "id": "krm00ff05302fcb",
+  "type": "link out",
+  "z": "krm898ed174454a",
+  "name": "→ Betriebsstunden ",
+  "x": 720,
+  "y": 500,
+  "mode": "link",
+  "links": [
+   "krmd87aaf027b72"
+  ]
+ },
+ {
+  "id": "krm67c6e8f1e93a",
+  "type": "function",
+  "z": "krm898ed174454a",
+  "name": "Wartungseintrag erfassen",
+  "x": 460,
+  "y": 480,
+  "wires": [
+   [
+    "krm581417bac930"
+   ],
+   [
+    "krm00ff05302fcb"
+   ]
+  ],
+  "func": "// Wartungseintrag aus dem Dashboard: {datum, betriebsstunden, arbeiten, ersatzteile, bemerkungen, reset_wartung, reset_filter}\nconst p = msg.payload;\nif (!p || typeof p !== 'object' || !String(p.arbeiten || '').trim()) { node.warn('Wartungseintrag ohne Arbeiten verworfen'); return [null, null]; }\nconst clean = v => String(v === undefined || v === null ? '' : v).replace(/[\"\\\\]/g, \"'\").replace(/[\\r\\n]+/g, ' / ').slice(0, 500);\nconst counters = global.get('counters') || {}; const src = (global.get('source_last') || 'real');\nconst bh = Number(p.betriebsstunden);\nconst bhTxt = Number.isFinite(bh) && bh >= 0 ? bh.toFixed(1) : ((counters[src] ? counters[src].total_s / 3600 : 0).toFixed(1));\nconst datum = clean(p.datum) || new Date().toISOString().slice(0, 10);\nconst f = 'value=1,datum=\"' + datum + '\",betriebsstunden=' + bhTxt + ',arbeiten=\"' + clean(p.arbeiten) + '\",ersatzteile=\"' + clean(p.ersatzteile) +\n          '\",bemerkungen=\"' + clean(p.bemerkungen) + '\",reset_wartung=' + (p.reset_wartung ? 1 : 0) + ',reset_filter=' + (p.reset_filter ? 1 : 0) +\n          ',text=\"Wartungseintrag ' + datum + ': ' + clean(p.arbeiten).slice(0, 120) + '\"';\nconst resets = [];\nif (p.reset_wartung) resets.push({ topic: 'reset_maint' });\nif (p.reset_filter) resets.push({ topic: 'reset_filter' });\nnode.status({ fill: 'green', shape: 'dot', text: 'Eintrag ' + datum });\nreturn [{ payload: [{ rp: 'events', line: 'events,type=maintenance_log,source=' + src + ' ' + f }] }, resets];",
+  "outputs": 2,
+  "timeout": 0,
+  "noerr": 0,
+  "initialize": "",
+  "finalize": "",
+  "libs": []
+ },
+ {
+  "id": "krm37160bb49fe9",
+  "type": "mqtt in",
+  "z": "krm898ed174454a",
+  "name": "Wartungseintrag (aus Dashboard)",
+  "x": 200,
+  "y": 480,
+  "wires": [
+   [
+    "krm67c6e8f1e93a"
+   ]
+  ],
+  "topic": "kompressor/maintenance/log/add",
+  "qos": "1",
+  "datatype": "json",
+  "broker": "krm2924a2d011c2",
+  "nl": false,
+  "rap": true,
+  "rh": 0,
+  "inputs": 0
+ },
+ {
+  "id": "krm217e479192fb",
+  "type": "link out",
+  "z": "krm898ed174454a",
+  "name": "→ MQTT ",
+  "x": 720,
+  "y": 360,
+  "mode": "link",
+  "links": [
+   "krm0dc083fc23f6"
+  ]
+ },
+ {
+  "id": "krm18d51589be0c",
+  "type": "link out",
+  "z": "krm898ed174454a",
+  "name": "→ Datenbank ",
+  "x": 720,
+  "y": 400,
+  "mode": "link",
+  "links": [
+   "krmef6b1dc7bdae"
+  ]
+ },
+ {
+  "id": "krm2d2cc8388809",
+  "type": "function",
+  "z": "krm898ed174454a",
+  "name": "Wartungsstatus berechnen",
+  "x": 460,
+  "y": 360,
+  "wires": [
+   [
+    "krm217e479192fb"
+   ],
+   [
+    "krm18d51589be0c"
+   ]
+  ],
+  "func": "const s = msg.payload; const cfg = global.get('cfg'); const mc = global.get('maint_cfg') || {};\nfunction evaluate(hours, interval) {\n    if (!interval) return { status: 'nicht_festgelegt', remaining: null };\n    const rem = interval - hours;\n    if (rem <= 0) return { status: 'faellig', remaining: rem };\n    if (hours >= interval * cfg.alerts.maint_soon_ratio) return { status: 'bald_faellig', remaining: rem };\n    return { status: 'ok', remaining: rem };\n}\nconst m = evaluate(s.since_maint_h, mc.interval_h), f = evaluate(s.since_filter_h, mc.filter_interval_h);\nconst r2 = x => x === null ? null : Math.round(x * 100) / 100;\nconst st = {\n    wartung: m.status, filter: f.status,\n    wartungsintervall_h: mc.interval_h || null, filterintervall_h: mc.filter_interval_h || null,\n    stunden_seit_wartung: r2(s.since_maint_h), stunden_seit_filterwechsel: r2(s.since_filter_h),\n    rest_bis_wartung_h: r2(m.remaining), rest_bis_filterwechsel_h: r2(f.remaining),\n    quelle: s.display,\n    hinweis: 'Intervalle noch nicht nach Herstellerunterlagen festgelegt – vorläufig konfigurierbar.'\n};\nglobal.set('maint_status', { service: m.status, filter: f.status, hours_since: st.stunden_seit_wartung, filter_hours_since: st.stunden_seit_filterwechsel,\n                              interval_h: st.wartungsintervall_h, filter_interval_h: st.filterintervall_h });\nnode.status({ fill: m.status === 'faellig' || f.status === 'faellig' ? 'red' : (m.status === 'ok' ? 'green' : 'yellow'), shape: 'dot', text: 'Wartung: ' + m.status + ' | Filter: ' + f.status });\nconst n = x => x === null ? 'None' : String(x);\nconst code = { ok: 0, bald_faellig: 1, faellig: 2, nicht_festgelegt: 3 };\nlet line = 'maintenance,source=' + s.display + ' status_code=' + code[m.status] + ',filter_status_code=' + code[f.status] +\n           ',hours_since=' + s.since_maint_h.toFixed(3) + ',filter_hours_since=' + s.since_filter_h.toFixed(3) +\n           ',interval_h=' + (mc.interval_h || 0) + ',filter_interval_h=' + (mc.filter_interval_h || 0);\nif (m.remaining !== null) line += ',remaining_h=' + m.remaining.toFixed(3);\nif (f.remaining !== null) line += ',filter_remaining_h=' + f.remaining.toFixed(3);\nreturn [[\n    { topic: 'kompressor/maintenance/status', payload: m.status, retain: true },\n    { topic: 'kompressor/maintenance/filter_status', payload: f.status, retain: true },\n    { topic: 'kompressor/maintenance/remaining_h', payload: n(st.rest_bis_wartung_h), retain: true },\n    { topic: 'kompressor/maintenance/filter_remaining_h', payload: n(st.rest_bis_filterwechsel_h), retain: true },\n    { topic: 'kompressor/maintenance/attr', payload: JSON.stringify(st), retain: true }\n], { payload: [line + ' ' + Date.now()] }];",
+  "outputs": 2,
+  "timeout": 0,
+  "noerr": 0,
+  "initialize": "",
+  "finalize": "",
+  "libs": []
+ },
+ {
+  "id": "krm01bf966ae700",
+  "type": "link in",
+  "z": "krm898ed174454a",
+  "name": "Zählerstand",
+  "links": [
+   "krm5b75126eb183"
+  ],
+  "x": 175,
+  "y": 360,
+  "wires": [
+   [
+    "krm2d2cc8388809"
+   ]
+  ]
+ },
+ {
+  "id": "krmc4b94d5c6dc0",
+  "type": "tab",
+  "label": "07 Fehlererkennung",
+  "disabled": false,
+  "info": "Sensorverfügbarkeit, Plausibilität, Grenzwerte (TEST), Verläufe."
+ },
+ {
+  "id": "krm96fb1d7ca1f8",
+  "type": "comment",
+  "z": "krmc4b94d5c6dc0",
+  "name": "Fehlererkennung (alle 5 s)",
+  "x": 170,
+  "y": 40,
+  "wires": [],
+  "info": "Regelbasierte Prüfungen – Schwellwerte sind TEST-Werte aus `cfg.alerts`:\n- Sensorknoten offline (LWT) / Datenübertragung ausgefallen\n- Sensor ohne aktuelle Daten / unplausible Werte\n- Temperatur ≥ Warn-/Störschwelle, ungewöhnlicher Temperaturanstieg (°C/min)\n- Enddruck ≥ Warn-/Störschwelle, kein Druckanstieg trotz laufendem Motor\n- Wartung/Filter fällig, InfluxDB nicht erreichbar, Simulation + reale Daten gleichzeitig\nErgebnis → Alarmierung. Sensorstatus je Sensor → MQTT (Verfügbarkeit in HA).\nEs werden KEINE Eingriffe in den Kompressor ausgelöst."
+ },
+ {
+  "id": "krm40629bbf189b",
+  "type": "link out",
+  "z": "krmc4b94d5c6dc0",
+  "name": "→ MQTT",
+  "x": 640,
+  "y": 200,
+  "mode": "link",
+  "links": [
+   "krm0dc083fc23f6"
+  ]
+ },
+ {
+  "id": "krm0fb3bbc2ccbf",
+  "type": "link out",
+  "z": "krmc4b94d5c6dc0",
+  "name": "→ Alarmierung",
+  "x": 640,
+  "y": 240,
+  "mode": "link",
+  "links": [
+   "krmadffe8024027"
+  ]
+ },
+ {
+  "id": "krm671c2a3a604d",
+  "type": "function",
+  "z": "krmc4b94d5c6dc0",
+  "name": "Prüfen",
+  "x": 420,
+  "y": 220,
+  "wires": [
+   [
+    "krm40629bbf189b"
+   ],
+   [
+    "krm0fb3bbc2ccbf"
+   ]
+  ],
+  "func": "const cfg = global.get('cfg'); if (!cfg || !global.get('counters_loaded')) return [null, null];\nconst now = Date.now(); const A = cfg.alerts;\nconst latest = global.get('latest') || {}; const inv = global.get('invalid_recent') || {};\nconst rates = global.get('rates') || {}; const run = global.get('run_state');\nconst nodeStatus = global.get('sensor_node_status');\nconst lastRx = global.get('last_rx') || 0;\nconst dataFresh = now - lastRx <= cfg.comm_timeout_s * 1000;\nconst alerts = [];\nconst add = (id, cat, severity, text) => alerts.push({ id: id, cat: cat, severity: severity, text: text });\nconst sstat = {};\nfor (const [s, d] of Object.entries(cfg.sensors)) {\n    const l = latest[s], i = inv[s];\n    if (i && now - i.ts <= cfg.invalid_hold_s * 1000) sstat[s] = 'ungueltig';\n    else if (l && now - l.rx <= d.stale_s * 1000) sstat[s] = 'ok';\n    else sstat[s] = 'keine_daten';\n    if (sstat[s] === 'ungueltig') add('invalid_' + s, 'sensor_data', 'warnung', 'Unplausible Messwerte: ' + d.name + ' (' + i.reason + ')');\n    if (sstat[s] === 'keine_daten' && dataFresh) add('stale_' + s, 'sensor_data', 'warnung', d.name + ' liefert keine Daten');\n}\nif (nodeStatus === 'offline') add('sensor_offline', 'comm', 'stoerung', 'Sensorknoten offline (Last Will empfangen)');\nelse if (nodeStatus === 'online' && !dataFresh)\n    add('comm_loss', 'comm', 'stoerung', 'Datenübertragung ausgefallen – keine Messdaten seit ' + (lastRx ? Math.round((now - lastRx) / 1000) + ' s' : 'dem Start'));\nconst val = s => sstat[s] === 'ok' ? latest[s].v : null;\nfor (const s of ['temp_stage1', 'temp_stage2', 'temp_stage3']) {\n    const v = val(s); if (v === null) continue; const n = cfg.sensors[s].name;\n    if (v >= A.temp_crit_c) add('temp_crit_' + s, 'temperature', 'stoerung', n + ' ' + v.toFixed(1) + ' °C ≥ ' + A.temp_crit_c + ' °C (TEST-Schwelle)');\n    else if (v >= A.temp_warn_c) add('temp_warn_' + s, 'temperature', 'warnung', n + ' ' + v.toFixed(1) + ' °C ≥ ' + A.temp_warn_c + ' °C (TEST-Schwelle)');\n    const r = rates[s];\n    if (r !== null && r !== undefined && r >= A.temp_rate_warn_c_min)\n        add('temp_rate_' + s, 'temperature', 'warnung', n + ': ungewöhnlicher Anstieg ' + r.toFixed(1) + ' °C/min (TEST-Schwelle ' + A.temp_rate_warn_c_min + ')');\n}\nconst p = val('pressure_final');\nif (p !== null) {\n    if (p >= A.pressure_crit_bar) add('pressure_crit', 'pressure', 'stoerung', 'Enddruck ' + p.toFixed(1) + ' bar ≥ ' + A.pressure_crit_bar + ' bar (TEST-Schwelle)');\n    else if (p >= A.pressure_warn_bar) add('pressure_warn', 'pressure', 'warnung', 'Enddruck ' + p.toFixed(1) + ' bar ≥ ' + A.pressure_warn_bar + ' bar (TEST-Schwelle)');\n    const r = rates.pressure_final;\n    if (run && run.running && sstat.motor_current === 'ok' && now - run.since >= A.no_rise_after_min * 60000 && r !== null && r !== undefined && r < A.no_rise_rate_bar_min)\n        add('pressure_no_rise', 'pressure', 'warnung', 'Kein Druckanstieg trotz laufendem Motor (' + r.toFixed(2) + ' bar/min, TEST-Schwelle ' + A.no_rise_rate_bar_min + ')');\n}\nconst ms = global.get('maint_status');\nif (ms && ms.service === 'faellig') add('maintenance_due', 'maintenance', 'warnung', 'Wartung fällig: ' + ms.hours_since + ' h seit Wartung (Intervall ' + ms.interval_h + ' h, vorläufig)');\nif (ms && ms.filter === 'faellig') add('filter_due', 'maintenance', 'warnung', 'Filterwechsel fällig: ' + ms.filter_hours_since + ' h seit Wechsel (Intervall ' + ms.filter_interval_h + ' h, vorläufig)');\nconst ix = global.get('influx') || {};\nif (ix.ok === false && ix.since_fail && now - ix.since_fail > 60000)\n    add('influx_down', 'database', 'warnung', 'InfluxDB nicht erreichbar – ' + (ix.buffer || 0) + ' Datenpunkte gepuffert');\nconst sim = global.get('sim') || {};\nif (sim.enabled && Object.values(latest).some(l => l.src === 'real' && now - l.rx <= 60000))\n    add('source_conflict', 'sensor_data', 'warnung', 'Simulation aktiv, gleichzeitig treffen reale Messwerte ein');\nconst prev = context.get('sstat') || {};\nconst mq = [];\nfor (const s in sstat) if (prev[s] !== sstat[s]) mq.push({ topic: 'kompressor/sensor_status/' + s, payload: sstat[s], retain: true });\ncontext.set('sstat', sstat);\nnode.status({ fill: alerts.length ? 'red' : 'green', shape: 'dot', text: alerts.length + ' aktive Meldung(en)' });\nreturn [mq, { payload: { alerts: alerts, dataFresh: dataFresh, sstat: sstat } }];",
+  "outputs": 2,
+  "timeout": 0,
+  "noerr": 0,
+  "initialize": "",
+  "finalize": "",
+  "libs": []
+ },
+ {
+  "id": "krme3a4e98b619c",
+  "type": "inject",
+  "z": "krmc4b94d5c6dc0",
+  "name": "alle 5 s",
+  "x": 180,
+  "y": 220,
+  "wires": [
+   [
+    "krm671c2a3a604d"
+   ]
+  ],
+  "props": [
+   {
+    "p": "payload"
+   },
+   {
+    "p": "topic",
+    "vt": "str"
+   }
+  ],
+  "repeat": "5",
+  "crontab": "",
+  "once": true,
+  "onceDelay": "12",
+  "topic": "tick",
+  "payload": "",
+  "payloadType": "date"
+ },
+ {
+  "id": "krm416d36ce52b2",
+  "type": "function",
+  "z": "krmc4b94d5c6dc0",
+  "name": "ungültige Werte merken",
+  "x": 420,
+  "y": 120,
+  "wires": [],
+  "func": "const inv = global.get('invalid_recent') || {};\ninv[msg.payload.sensor] = { ts: msg.payload.ts, reason: msg.payload.reason };\nglobal.set('invalid_recent', inv);\nnode.status({ fill: 'red', shape: 'ring', text: msg.payload.sensor + ': ' + msg.payload.reason });\nreturn null;",
+  "outputs": 0,
+  "timeout": 0,
+  "noerr": 0,
+  "initialize": "",
+  "finalize": "",
+  "libs": []
+ },
+ {
+  "id": "krm5127ddc5692c",
+  "type": "link in",
+  "z": "krmc4b94d5c6dc0",
+  "name": "ungültige Werte",
+  "links": [
+   "krm1fd46aa83cdf"
+  ],
+  "x": 185,
+  "y": 120,
+  "wires": [
+   [
+    "krm416d36ce52b2"
+   ]
+  ]
+ },
+ {
+  "id": "krmecbb39661a80",
+  "type": "tab",
+  "label": "08 Alarmierung",
+  "disabled": false,
+  "info": "Aktive Meldungen, Gesamtstatus, Ereignisprotokoll."
+ },
+ {
+  "id": "krm686aa1a2d393",
+  "type": "comment",
+  "z": "krmecbb39661a80",
+  "name": "Alarmierung",
+  "x": 170,
+  "y": 40,
+  "wires": [],
+  "info": "Verwaltet aktive Meldungen (seit wann), schreibt Auftreten/Behebung als Ereignis\nnach InfluxDB und publiziert (retained):\n- `kompressor/status`: `normal` | `warnung` | `stoerung` | `keine_daten`\n- `kompressor/alerts`: JSON mit allen aktiven Meldungen\n- `kompressor/alert/<kategorie>`: `ON`/`OFF` (comm, sensor_data, temperature, pressure, maintenance, database)\nBenachrichtigungen erzeugt Home Assistant (Automation „Kompressor: Meldungen anzeigen“)."
+ },
+ {
+  "id": "krme7209ac1de06",
+  "type": "link out",
+  "z": "krmecbb39661a80",
+  "name": "→ MQTT",
+  "x": 640,
+  "y": 120,
+  "mode": "link",
+  "links": [
+   "krm0dc083fc23f6"
+  ]
+ },
+ {
+  "id": "krmc0a4e6fc8616",
+  "type": "link out",
+  "z": "krmecbb39661a80",
+  "name": "→ Datenbank",
+  "x": 640,
+  "y": 160,
+  "mode": "link",
+  "links": [
+   "krmef6b1dc7bdae"
+  ]
+ },
+ {
+  "id": "krm6d4751c713c0",
+  "type": "function",
+  "z": "krmecbb39661a80",
+  "name": "Meldungen verwalten",
+  "x": 420,
+  "y": 140,
+  "wires": [
+   [
+    "krme7209ac1de06"
+   ],
+   [
+    "krmc0a4e6fc8616"
+   ]
+  ],
+  "func": "const now = Date.now(); const alerts = msg.payload.alerts; const dataFresh = msg.payload.dataFresh;\nconst prev = context.get('active') || {};\nconst active = {}; const lines = [];\nconst q = s => s.replace(/\"/g, \"'\");\nconst srcTag = global.get('source_last') || 'real';\nfor (const a of alerts) {\n    active[a.id] = Object.assign({}, a, { since: prev[a.id] ? prev[a.id].since : now });\n    if (!prev[a.id]) lines.push({ rp: 'events', line: 'events,type=alert,id=' + a.id + ',severity=' + a.severity + ',source=' + srcTag + ' value=1,text=\"' + q(a.text) + '\"' });\n}\nfor (const id in prev) if (!active[id])\n    lines.push({ rp: 'events', line: 'events,type=alert_cleared,id=' + id + ',severity=' + prev[id].severity + ',source=' + srcTag + ' value=0,text=\"Behoben: ' + q(prev[id].text) + '\"' });\ncontext.set('active', active);\nglobal.set('alerts_active', active);\nconst list = Object.values(active).sort((a, b) => ((a.severity === 'stoerung' ? 0 : 1) - (b.severity === 'stoerung' ? 0 : 1)) || (a.since - b.since));\nconst faults = list.filter(a => a.severity === 'stoerung').length;\nconst warns = list.filter(a => a.severity === 'warnung').length;\nlet status = 'normal';\nif (faults) status = 'stoerung'; else if (!dataFresh) status = 'keine_daten'; else if (warns) status = 'warnung';\nconst src = dataFresh ? (global.get('source_last') === 'sim' ? 'simulation' : 'real') : 'keine';\nconst mq = [];\nconst sig = JSON.stringify([status, src, list.map(a => a.id + a.text)]);\nif (sig !== context.get('sig') || now - (context.get('last_pub') || 0) > 60000) {\n    context.set('sig', sig); context.set('last_pub', now);\n    mq.push({ topic: 'kompressor/status', payload: status, retain: true });\n    mq.push({ topic: 'kompressor/source', payload: src, retain: true });\n    mq.push({ topic: 'kompressor/status/attr', retain: true, payload: JSON.stringify({\n        status: status, quelle: src, stoerungen: faults, warnungen: warns, schwellwerte: 'TEST-Werte, keine Herstellerangaben',\n        aktualisiert: new Date(now).toISOString() }) });\n    mq.push({ topic: 'kompressor/alerts', retain: true, payload: JSON.stringify({\n        count: list.length, stoerungen: faults, warnungen: warns,\n        text: list.length ? list.map(a => (a.severity === 'stoerung' ? 'STÖRUNG: ' : 'Warnung: ') + a.text).join('\\n') : 'Keine aktiven Meldungen',\n        active: list.map(a => ({ id: a.id, kategorie: a.cat, schwere: a.severity, text: a.text, seit: new Date(a.since).toISOString() })) }) });\n    for (const c of ['comm', 'sensor_data', 'temperature', 'pressure', 'maintenance', 'database'])\n        mq.push({ topic: 'kompressor/alert/' + c, payload: list.some(a => a.cat === c) ? 'ON' : 'OFF', retain: true });\n}\nconst code = { normal: 0, warnung: 1, stoerung: 2, keine_daten: 3 }[status];\nlines.push('state,source=' + (global.get('source_last') || 'real') + ' status_code=' + code + ',alerts=' + list.length + ',faults=' + faults + ',warnings=' + warns + ' ' + now);\nnode.status({ fill: { normal: 'green', warnung: 'yellow', stoerung: 'red', keine_daten: 'grey' }[status], shape: 'dot', text: status + ' – ' + faults + ' Störung(en), ' + warns + ' Warnung(en)' });\nreturn [mq, { payload: lines }];",
+  "outputs": 2,
+  "timeout": 0,
+  "noerr": 0,
+  "initialize": "",
+  "finalize": "",
+  "libs": []
+ },
+ {
+  "id": "krmadffe8024027",
+  "type": "link in",
+  "z": "krmecbb39661a80",
+  "name": "Alarmprüfung",
+  "links": [
+   "krm0fb3bbc2ccbf"
+  ],
+  "x": 175,
+  "y": 140,
+  "wires": [
+   [
+    "krm6d4751c713c0"
+   ]
+  ]
+ },
+ {
+  "id": "krm041b3c4775bf",
+  "type": "tab",
+  "label": "09 Datenbankanbindung",
+  "disabled": false,
+  "info": "Gepuffertes Schreiben nach InfluxDB 1.x (Line Protocol)."
+ },
+ {
+  "id": "krm119b20e1d2f6",
+  "type": "comment",
+  "z": "krm041b3c4775bf",
+  "name": "InfluxDB-Anbindung",
+  "x": 170,
+  "y": 40,
+  "wires": [],
+  "info": "Alle Tabs liefern Line-Protocol-Zeilen (String → RP `raw`, oder `{rp, line}`).\nZeilen ohne Zeitstempel erhalten beim Puffern die aktuelle Zeit (ms) – so bleiben\nZeitstempel auch bei verzögertem Schreiben korrekt.\n\nPuffer im Speicher (max. 50 000 Zeilen, älteste werden verworfen). Alle 2 s wird\nein Block (≤ 5000 Zeilen, gleiche RP) an `http://a0d7b954-influxdb:8086/write` gesendet. Bei Fehler\nbleibt der Block im Puffer und wird erneut gesendet; HTTP 400 (ungültige Daten)\nwird verworfen, um Endlosschleifen zu vermeiden.\nZugang: Benutzer `kompressor-nodered` (Credentials im Knoten, nicht im Export)."
+ },
+ {
+  "id": "krm90c850ad4247",
+  "type": "link out",
+  "z": "krm041b3c4775bf",
+  "name": "→ Ereignisse (HA)",
+  "x": 620,
+  "y": 140,
+  "mode": "link",
+  "links": [
+   "krm34d4fd5ea53e"
+  ]
+ },
+ {
+  "id": "krmf609accc19d1",
+  "type": "function",
+  "z": "krm041b3c4775bf",
+  "name": "Puffern",
+  "x": 400,
+  "y": 140,
+  "wires": [
+   [
+    "krm90c850ad4247"
+   ]
+  ],
+  "func": "const items = Array.isArray(msg.payload) ? msg.payload : [msg.payload];\nconst buf = flow.get('buf') || [];\nconst now = Date.now();\nconst events = [];\nfor (const it of items) {\n    if (!it) continue;\n    const e = typeof it === 'string' ? { rp: 'raw', line: it } : { rp: it.rp || 'raw', line: it.line };\n    if (!/ \\d{13}$/.test(e.line)) e.line += ' ' + now;\n    buf.push(e);\n    if (e.rp === 'events') events.push({ payload: e.line });\n}\nconst MAX = 50000;\nconst ix = global.get('influx') || {};\nif (buf.length > MAX) {\n    const drop = buf.length - MAX; buf.splice(0, drop);\n    ix.dropped = (ix.dropped || 0) + drop;\n    flow.set('inflight', Math.max(0, (flow.get('inflight') || 0) - drop));\n}\nflow.set('buf', buf);\nix.buffer = buf.length; global.set('influx', ix);\nreturn [events];",
+  "outputs": 1,
+  "timeout": 0,
+  "noerr": 0,
+  "initialize": "",
+  "finalize": "",
+  "libs": []
+ },
+ {
+  "id": "krmef6b1dc7bdae",
+  "type": "link in",
+  "z": "krm041b3c4775bf",
+  "name": "Datenpunkte",
+  "links": [
+   "krm9c9b3a8dbc17",
+   "krmdf98123fdd0a",
+   "krm4542eb7e9191",
+   "krm62208ada4435",
+   "krmbbeade76ab61",
+   "krm581417bac930",
+   "krm18d51589be0c",
+   "krmc0a4e6fc8616",
+   "krmc2010163dab8",
+   "krm5cb77a887e35",
+   "krme5b16212048f"
+  ],
+  "x": 175,
+  "y": 140,
+  "wires": [
+   [
+    "krmf609accc19d1"
+   ]
+  ]
+ },
+ {
+  "id": "krmffd55e5a948f",
+  "type": "function",
+  "z": "krm041b3c4775bf",
+  "name": "Antwort auswerten",
+  "x": 780,
+  "y": 220,
+  "wires": [],
+  "func": "const ix = global.get('influx') || {}; const now = Date.now();\nconst n = flow.get('inflight') || 0; const buf = flow.get('buf') || [];\nconst code = Number(msg.statusCode);\nif (code === 204) {\n    buf.splice(0, n); ix.ok = true; ix.last_ok = now; ix.since_fail = null; ix.last_error = null; ix.written = (ix.written || 0) + n;\n} else if (code === 400) {\n    buf.splice(0, n); ix.bad = (ix.bad || 0) + n;\n    ix.last_error = 'Ungültige Daten verworfen: ' + String(msg.payload).slice(0, 200); node.warn(ix.last_error);\n} else {\n    if (ix.ok !== false) ix.since_fail = now;\n    ix.ok = false; ix.last_error = 'HTTP ' + (msg.statusCode || '-') + ': ' + String(msg.payload || '').slice(0, 200);\n}\nflow.set('buf', buf); flow.set('inflight', 0);\nix.buffer = buf.length; global.set('influx', ix);\nnode.status({ fill: ix.ok ? 'green' : 'red', shape: 'dot', text: (ix.ok ? 'OK' : 'Fehler') + ' – geschrieben ' + (ix.written || 0) + ', Puffer ' + buf.length });\nreturn null;",
+  "outputs": 0,
+  "timeout": 0,
+  "noerr": 0,
+  "initialize": "",
+  "finalize": "",
+  "libs": []
+ },
+ {
+  "id": "krm542e703c8a5d",
+  "type": "http request",
+  "z": "krm041b3c4775bf",
+  "name": "InfluxDB /write",
+  "x": 590,
+  "y": 220,
+  "wires": [
+   [
+    "krmffd55e5a948f"
+   ]
+  ],
+  "method": "use",
+  "ret": "txt",
+  "paytoqs": "ignore",
+  "url": "",
+  "tls": "",
+  "persist": false,
+  "proxy": "",
+  "insecureHTTPParser": false,
+  "authType": "basic",
+  "senderr": false,
+  "headers": []
+ },
+ {
+  "id": "krm7ac25f50dc0c",
+  "type": "function",
+  "z": "krm041b3c4775bf",
+  "name": "Block senden",
+  "x": 400,
+  "y": 220,
+  "wires": [
+   [
+    "krm542e703c8a5d"
+   ]
+  ],
+  "func": "const buf = flow.get('buf') || []; const now = Date.now();\nif ((flow.get('inflight') || 0) > 0) {\n    if (now - (flow.get('inflight_since') || 0) < 60000) return null;\n    flow.set('inflight', 0);    // Antwort hängt > 60 s: Block erneut senden\n}\nif (!buf.length) return null;\nconst rp = buf[0].rp; let n = 0;\nwhile (n < buf.length && n < 5000 && buf[n].rp === rp) n++;\nflow.set('inflight', n); flow.set('inflight_since', now);\nmsg.url = 'http://a0d7b954-influxdb:8086/write?db=kompressor&rp=' + rp + '&precision=ms';\nmsg.method = 'POST';\nmsg.headers = { 'Content-Type': 'text/plain; charset=utf-8' };\nmsg.payload = buf.slice(0, n).map(x => x.line).join('\\n');\nreturn msg;",
+  "outputs": 1,
+  "timeout": 0,
+  "noerr": 0,
+  "initialize": "",
+  "finalize": "",
+  "libs": []
+ },
+ {
+  "id": "krmc4e579d774f3",
+  "type": "inject",
+  "z": "krm041b3c4775bf",
+  "name": "alle 2 s",
+  "x": 180,
+  "y": 220,
+  "wires": [
+   [
+    "krm7ac25f50dc0c"
+   ]
+  ],
+  "props": [
+   {
+    "p": "payload"
+   },
+   {
+    "p": "topic",
+    "vt": "str"
+   }
+  ],
+  "repeat": "2",
+  "crontab": "",
+  "once": true,
+  "onceDelay": "3",
+  "topic": "tick",
+  "payload": "",
+  "payloadType": "date"
+ },
+ {
+  "id": "krm2df9c2becd28",
+  "type": "function",
+  "z": "krm041b3c4775bf",
+  "name": "Erreichbarkeit merken",
+  "x": 780,
+  "y": 300,
+  "wires": [],
+  "func": "global.set('influx_ping', Number(msg.statusCode) === 204);\nnode.status({ fill: Number(msg.statusCode) === 204 ? 'green' : 'red', shape: 'dot', text: 'Ping: ' + msg.statusCode });\nreturn null;",
+  "outputs": 0,
+  "timeout": 0,
+  "noerr": 0,
+  "initialize": "",
+  "finalize": "",
+  "libs": []
+ },
+ {
+  "id": "krm55ee9cae8d23",
+  "type": "http request",
+  "z": "krm041b3c4775bf",
+  "name": "InfluxDB /ping",
+  "x": 590,
+  "y": 300,
+  "wires": [
+   [
+    "krm2df9c2becd28"
+   ]
+  ],
+  "method": "use",
+  "ret": "txt",
+  "paytoqs": "ignore",
+  "url": "",
+  "tls": "",
+  "persist": false,
+  "proxy": "",
+  "insecureHTTPParser": false,
+  "authType": "",
+  "senderr": false,
+  "headers": []
+ },
+ {
+  "id": "krmbc08876df46a",
+  "type": "function",
+  "z": "krm041b3c4775bf",
+  "name": "Ping vorbereiten",
+  "x": 400,
+  "y": 300,
+  "wires": [
+   [
+    "krm55ee9cae8d23"
+   ]
+  ],
+  "func": "msg.url = 'http://a0d7b954-influxdb:8086/ping'; msg.method = 'GET'; return msg;",
+  "outputs": 1,
+  "timeout": 0,
+  "noerr": 0,
+  "initialize": "",
+  "finalize": "",
+  "libs": []
+ },
+ {
+  "id": "krmb5544a8a2537",
+  "type": "inject",
+  "z": "krm041b3c4775bf",
+  "name": "alle 30 s",
+  "x": 180,
+  "y": 300,
+  "wires": [
+   [
+    "krmbc08876df46a"
+   ]
+  ],
+  "props": [
+   {
+    "p": "payload"
+   },
+   {
+    "p": "topic",
+    "vt": "str"
+   }
+  ],
+  "repeat": "30",
+  "crontab": "",
+  "once": true,
+  "onceDelay": "5",
+  "topic": "tick",
+  "payload": "",
+  "payloadType": "date"
+ },
+ {
+  "id": "krm36b5b1b7e3c3",
+  "type": "tab",
+  "label": "10 Systemdiagnose",
+  "disabled": false,
+  "info": "Zustand der Verarbeitungskette."
+ },
+ {
+  "id": "krm113631027592",
+  "type": "comment",
+  "z": "krm36b5b1b7e3c3",
+  "name": "Systemdiagnose (alle 15 s)",
+  "x": 170,
+  "y": 40,
+  "wires": [],
+  "info": "Publiziert unter `kompressor/system/*` (retained) und schreibt `system` nach InfluxDB:\nHeartbeat, InfluxDB-Status, Puffergröße, Nachrichtenrate, ungültige/doppelte\nNachrichten, korrigierte Zeitstempel, Alter der letzten Messung, Herkunft der Zähler.\nVerfügbarkeit von Node-RED selbst: Last Will `kompressor/availability`.\nCPU/RAM/Speicher des Hosts liefert die HA-Integration „System Monitor“."
+ },
+ {
+  "id": "krm87279accca8f",
+  "type": "link out",
+  "z": "krm36b5b1b7e3c3",
+  "name": "→ MQTT",
+  "x": 640,
+  "y": 120,
+  "mode": "link",
+  "links": [
+   "krm0dc083fc23f6"
+  ]
+ },
+ {
+  "id": "krmc2010163dab8",
+  "type": "link out",
+  "z": "krm36b5b1b7e3c3",
+  "name": "→ Datenbank",
+  "x": 640,
+  "y": 160,
+  "mode": "link",
+  "links": [
+   "krmef6b1dc7bdae"
+  ]
+ },
+ {
+  "id": "krme0464a9533f9",
+  "type": "function",
+  "z": "krm36b5b1b7e3c3",
+  "name": "Diagnose erfassen",
+  "x": 420,
+  "y": 140,
+  "wires": [
+   [
+    "krm87279accca8f"
+   ],
+   [
+    "krmc2010163dab8"
+   ]
+  ],
+  "func": "const now = Date.now();\nconst stats = global.get('stats') || { rx: 0, valid: 0, invalid: 0, dup: 0, ts_fixed: 0 };\nconst prev = context.get('prev') || { t: now - 15000, rx: stats.rx };\nconst rate = (stats.rx - prev.rx) / Math.max(1 / 60, (now - prev.t) / 60000);\ncontext.set('prev', { t: now, rx: stats.rx });\nconst start = context.get('start') || now; context.set('start', start);\nconst ix = global.get('influx') || {};\nconst lastRx = global.get('last_rx');\nconst age = lastRx ? Math.round((now - lastRx) / 1000) : null;\nlet influx = 'unbekannt';\nif (global.get('influx_ping') === false) influx = 'nicht_erreichbar';\nelse if (ix.ok === false) influx = 'schreibfehler';\nelse if (ix.ok) influx = 'ok';\nconst P = 'kompressor/system/';\nconst mq = [\n    { topic: P + 'heartbeat', payload: new Date(now).toISOString(), retain: true },\n    { topic: P + 'influxdb', payload: influx, retain: true },\n    { topic: P + 'db_buffer', payload: String(ix.buffer || 0), retain: true },\n    { topic: P + 'rx_per_min', payload: rate.toFixed(1), retain: true },\n    { topic: P + 'invalid_total', payload: String(stats.invalid), retain: true },\n    { topic: P + 'duplicates_total', payload: String(stats.dup), retain: true },\n    { topic: P + 'ts_corrected_total', payload: String(stats.ts_fixed), retain: true },\n    { topic: P + 'data_age_s', payload: age === null ? 'None' : String(age), retain: true },\n    { topic: P + 'uptime_h', payload: ((now - start) / 3600000).toFixed(2), retain: true },\n    { topic: P + 'attr', retain: true, payload: JSON.stringify({ zaehler_herkunft: global.get('counters_origin') || 'noch nicht geladen',\n        influx_letzter_fehler: ix.last_error || null, influx_geschrieben: ix.written || 0, influx_verworfen: (ix.dropped || 0) + (ix.bad || 0),\n        flows_version: (global.get('cfg') || {}).version }) }\n];\nlet line = 'system,host=kompressorraum influx_ok=' + (influx === 'ok' ? 1 : 0) + ',db_buffer=' + (ix.buffer || 0) + ',rx_per_min=' + rate.toFixed(2) +\n           ',invalid_total=' + stats.invalid + ',duplicates_total=' + stats.dup + ',ts_corrected_total=' + stats.ts_fixed;\nif (age !== null) line += ',data_age_s=' + age;\nline += ' ' + now;\nnode.status({ fill: influx === 'ok' ? 'green' : 'yellow', shape: 'dot', text: 'InfluxDB ' + influx + ', ' + rate.toFixed(0) + ' Msg/min, Datenalter ' + (age === null ? '–' : age + ' s') });\nreturn [mq, { payload: [line] }];",
+  "outputs": 2,
+  "timeout": 0,
+  "noerr": 0,
+  "initialize": "",
+  "finalize": "",
+  "libs": []
+ },
+ {
+  "id": "krm96bf4433cdb8",
+  "type": "inject",
+  "z": "krm36b5b1b7e3c3",
+  "name": "alle 15 s",
+  "x": 180,
+  "y": 140,
+  "wires": [
+   [
+    "krme0464a9533f9"
+   ]
+  ],
+  "props": [
+   {
+    "p": "payload"
+   },
+   {
+    "p": "topic",
+    "vt": "str"
+   }
+  ],
+  "repeat": "15",
+  "crontab": "",
+  "once": true,
+  "onceDelay": "15",
+  "topic": "tick",
+  "payload": "",
+  "payloadType": "date"
+ },
+ {
+  "id": "krm90f5ca079ff7",
+  "type": "tab",
+  "label": "12 Ereignisse (HA)",
+  "disabled": false,
+  "info": "Ereignisse als HA-Event-Entität für Ereignisansicht und Zyklusdiagnose."
+ },
+ {
+  "id": "krme6eb951bf709",
+  "type": "comment",
+  "z": "krm90f5ca079ff7",
+  "name": "Ereignisse → Home Assistant",
+  "x": 170,
+  "y": 40,
+  "wires": [],
+  "info": "Jede Ereigniszeile (RP `events`) wird zusätzlich als JSON auf `kompressor/event` publiziert\nund erscheint in HA als `event.kompressor_ereignis` (Recorder → Ereignisansicht,\nZyklusdiagnose). Ereignistypen: motorstart, motorstopp (mit Zykluskennwerten),\nwarnung, stoerung, behoben, kommunikationsausfall, sensorfehler, wartung,\nfilterwechsel, wartungseintrag, konfiguration, simulation, sensorknoten."
+ },
+ {
+  "id": "krm595f96948e31",
+  "type": "link out",
+  "z": "krm90f5ca079ff7",
+  "name": "→ MQTT",
+  "x": 640,
+  "y": 140,
+  "mode": "link",
+  "links": [
+   "krm0dc083fc23f6"
+  ]
+ },
+ {
+  "id": "krm1af917ddb10f",
+  "type": "function",
+  "z": "krm90f5ca079ff7",
+  "name": "Ereignis für HA aufbereiten",
+  "x": 400,
+  "y": 140,
+  "wires": [
+   [
+    "krm595f96948e31"
+   ]
+  ],
+  "func": "function split(str, sep) {               // trennt an sep außerhalb von \"…\"\n    const out = []; let cur = '', q = false;\n    for (const ch of str) { if (ch === '\"') q = !q; if (ch === sep && !q) { out.push(cur); cur = ''; } else cur += ch; }\n    out.push(cur); return out;\n}\nconst parts = split(msg.payload, ' ');\nconst tags = {}; split(parts[0], ',').slice(1).forEach(kv => { const i = kv.indexOf('='); tags[kv.slice(0, i)] = kv.slice(i + 1); });\nconst fields = {};\nsplit(parts[1], ',').forEach(kv => { const i = kv.indexOf('='); let v = kv.slice(i + 1); fields[kv.slice(0, i)] = v.startsWith('\"') ? v.slice(1, -1) : Number(v); });\nconst ts = Number(parts[2]);\nconst id = tags.id || '';\nconst MAP = { motor_start: 'motorstart', cycle: 'motorstopp', alert_cleared: 'behoben', maintenance: 'wartung', filter_change: 'filterwechsel',\n              maintenance_log: 'wartungseintrag', maintenance_config: 'konfiguration', simulation: 'simulation', sensor_node: 'sensorknoten', release: 'freigabe' };\nlet et = MAP[tags.type];\nif (tags.type === 'alert') et = (id === 'comm_loss' || id === 'sensor_offline') ? 'kommunikationsausfall'\n    : (id.startsWith('invalid_') || id.startsWith('stale_')) ? 'sensorfehler' : (tags.severity === 'stoerung' ? 'stoerung' : 'warnung');\nif (!et) return null;                     // motor_stop wird über \"cycle\" (mit Dauer) gemeldet\nconst p = { event_type: et, text: fields.text || '', zeit: new Date(ts).toISOString(), quelle: tags.source || null };\nif (tags.severity) p.schwere = tags.severity;\nif (id) p.meldung_id = id;\nif (tags.key) p.schluessel = tags.key;\nfor (const [k, v] of Object.entries(fields)) if (k !== 'text' && k !== 'value') p[k] = v;\nif (et === 'motorstopp') p.dauer_s = fields.value;\nif (et === 'wartung' || et === 'filterwechsel') p.stunden_seit_vorher = fields.value;\nif (et === 'konfiguration') p.wert = fields.value;\nnode.status({ fill: 'blue', shape: 'dot', text: et + ' ' + new Date(ts).toLocaleTimeString() });\nreturn { topic: 'kompressor/event', payload: JSON.stringify(p), retain: false };",
+  "outputs": 1,
+  "timeout": 0,
+  "noerr": 0,
+  "initialize": "",
+  "finalize": "",
+  "libs": []
+ },
+ {
+  "id": "krm34d4fd5ea53e",
+  "type": "link in",
+  "z": "krm90f5ca079ff7",
+  "name": "Ereignis-Zeilen",
+  "links": [
+   "krm90c850ad4247"
+  ],
+  "x": 175,
+  "y": 140,
+  "wires": [
+   [
+    "krm1af917ddb10f"
+   ]
+  ]
+ },
+ {
+  "id": "krm5cb77a887e35",
+  "type": "link out",
+  "z": "krm90f5ca079ff7",
+  "name": "→ Datenbank",
+  "x": 640,
+  "y": 240,
+  "mode": "link",
+  "links": [
+   "krmef6b1dc7bdae"
+  ]
+ },
+ {
+  "id": "krm203602739e6e",
+  "type": "function",
+  "z": "krm90f5ca079ff7",
+  "name": "Freigabe-Zustand",
+  "x": 400,
+  "y": 240,
+  "wires": [
+   [
+    "krm5cb77a887e35"
+   ]
+  ],
+  "func": "// Betriebsfreigabe aus HA (Skripte/Automation, retained): {zustand: on|off, ausgang, aktion, zeit}\n// Zustandsänderungen werden 3 s gesammelt, damit die Meldung des Skripts („erteilt/entzogen“) Vorrang hat.\nconst p = msg.payload; if (!p || typeof p !== 'object') return null;\nconst r = { on: p.zustand === 'on', state: p.zustand, ausgang: p.ausgang, aktion: p.aktion, ts: Date.now() };\nconst prev = global.get('release') || {};\nglobal.set('release', r);\nnode.status({ fill: r.on ? 'green' : 'grey', shape: 'dot', text: (r.on ? 'freigegeben' : 'gesperrt') + ' (' + p.ausgang + ')' });\nconst TEXT = { freigabe: 'Betriebsfreigabe erteilt', sperre: 'Betriebsfreigabe entzogen',\n               freigabe_fehlgeschlagen: 'Freigabe fehlgeschlagen (Ausgang reagiert nicht)', sperre_fehlgeschlagen: 'Sperren fehlgeschlagen (Ausgang reagiert nicht)' };\nconst pend = context.get('pend');\nif (pend && pend.state === r.state) { if (TEXT[p.aktion]) pend.text = TEXT[p.aktion]; return null; }\nif (prev.state === r.state && !TEXT[p.aktion]) return null;\nif (prev.state === r.state && !String(p.aktion).includes('fehlgeschlagen')) return null;\nconst entry = { state: r.state, ausgang: p.ausgang, text: TEXT[p.aktion] || ('Freigabe-Ausgang ' + (r.on ? 'ein' : 'aus') + ' (vor Ort/App geschaltet)') };\ncontext.set('pend', entry);\nsetTimeout(() => {\n    const e = context.get('pend'); context.set('pend', null); if (!e) return;\n    node.send({ payload: [{ rp: 'events', line: 'events,type=release,source=' + (global.get('source_last') || 'real') + ' value=' + (e.state === 'on' ? 1 : 0) +\n                          ',ausgang=\"' + String(e.ausgang).replace(/\"/g, \"'\") + '\",text=\"' + e.text + '\"' }] });\n}, 3000);\nreturn null;",
+  "outputs": 1,
+  "timeout": 0,
+  "noerr": 0,
+  "initialize": "",
+  "finalize": "",
+  "libs": []
+ },
+ {
+  "id": "krmb2ed86e773db",
+  "type": "mqtt in",
+  "z": "krm90f5ca079ff7",
+  "name": "Betriebsfreigabe (aus HA)",
+  "x": 170,
+  "y": 240,
+  "wires": [
+   [
+    "krm203602739e6e"
+   ]
+  ],
+  "topic": "kompressor/control/release",
+  "qos": "1",
+  "datatype": "json",
+  "broker": "krm2924a2d011c2",
+  "nl": false,
+  "rap": true,
+  "rh": 0,
+  "inputs": 0
+ },
+ {
+  "id": "krm0b8ca7c67169",
+  "type": "tab",
+  "label": "11 Home-Assistant-Discovery",
+  "disabled": false,
+  "info": "MQTT-Discovery-Konfiguration der HA-Entitäten."
+ },
+ {
+  "id": "krmddabcda059f7",
+  "type": "comment",
+  "z": "krm0b8ca7c67169",
+  "name": "MQTT Discovery",
+  "x": 170,
+  "y": 40,
+  "wires": [],
+  "info": "Legt beim Start und nach jedem HA-Neustart (`homeassistant/status` = online) alle\nEntitäten des Geräts „Kompressor“ per MQTT Discovery an (retained).\nDie Definitionen werden von `tools/build_nodered.py` erzeugt (siehe docs/mqtt.md)."
+ },
+ {
+  "id": "krm3f2a1ebb174e",
+  "type": "link out",
+  "z": "krm0b8ca7c67169",
+  "name": "→ MQTT",
+  "x": 640,
+  "y": 140,
+  "mode": "link",
+  "links": [
+   "krm0dc083fc23f6"
+  ]
+ },
+ {
+  "id": "krm5d33f93ebf14",
+  "type": "function",
+  "z": "krm0b8ca7c67169",
+  "name": "Discovery publizieren",
+  "x": 420,
+  "y": 140,
+  "wires": [
+   [
+    "krm3f2a1ebb174e"
+   ]
+  ],
+  "func": "const D = [[\"homeassistant/sensor/kompressor/status/config\", {\"name\": \"Status\", \"unique_id\": \"kompressor_status\", \"default_entity_id\": \"sensor.kompressor_status\", \"device\": {\"identifiers\": [\"kompressor\"], \"name\": \"Kompressor\", \"manufacturer\": \"Compresio\", \"model\": \"Atemluftkompressor, dreistufig\", \"sw_version\": \"Compresio-Flows 1.1.0\", \"suggested_area\": \"Kompressorraum\"}, \"origin\": {\"name\": \"Compresio Node-RED\", \"sw_version\": \"1.1.0\"}, \"availability\": [{\"topic\": \"kompressor/availability\"}], \"availability_mode\": \"all\", \"state_topic\": \"kompressor/status\", \"json_attributes_topic\": \"kompressor/status/attr\", \"device_class\": \"enum\", \"options\": [\"normal\", \"warnung\", \"stoerung\", \"keine_daten\"], \"icon\": \"mdi:list-status\"}], [\"homeassistant/sensor/kompressor/quelle/config\", {\"name\": \"Datenquelle\", \"unique_id\": \"kompressor_quelle\", \"default_entity_id\": \"sensor.kompressor_quelle\", \"device\": {\"identifiers\": [\"kompressor\"], \"name\": \"Kompressor\", \"manufacturer\": \"Compresio\", \"model\": \"Atemluftkompressor, dreistufig\", \"sw_version\": \"Compresio-Flows 1.1.0\", \"suggested_area\": \"Kompressorraum\"}, \"origin\": {\"name\": \"Compresio Node-RED\", \"sw_version\": \"1.1.0\"}, \"availability\": [{\"topic\": \"kompressor/availability\"}], \"availability_mode\": \"all\", \"state_topic\": \"kompressor/source\", \"device_class\": \"enum\", \"options\": [\"real\", \"simulation\", \"keine\"], \"icon\": \"mdi:database-eye\"}], [\"homeassistant/sensor/kompressor/letzte_aktualisierung/config\", {\"name\": \"Letzte Aktualisierung\", \"unique_id\": \"kompressor_letzte_aktualisierung\", \"default_entity_id\": \"sensor.kompressor_letzte_aktualisierung\", \"device\": {\"identifiers\": [\"kompressor\"], \"name\": \"Kompressor\", \"manufacturer\": \"Compresio\", \"model\": \"Atemluftkompressor, dreistufig\", \"sw_version\": \"Compresio-Flows 1.1.0\", \"suggested_area\": \"Kompressorraum\"}, \"origin\": {\"name\": \"Compresio Node-RED\", \"sw_version\": \"1.1.0\"}, \"availability\": [{\"topic\": \"kompressor/availability\"}], \"availability_mode\": \"all\", \"state_topic\": \"kompressor/last_update\", \"device_class\": \"timestamp\"}], [\"homeassistant/binary_sensor/kompressor/motor/config\", {\"name\": \"Motor\", \"unique_id\": \"kompressor_motor\", \"default_entity_id\": \"binary_sensor.kompressor_motor\", \"device\": {\"identifiers\": [\"kompressor\"], \"name\": \"Kompressor\", \"manufacturer\": \"Compresio\", \"model\": \"Atemluftkompressor, dreistufig\", \"sw_version\": \"Compresio-Flows 1.1.0\", \"suggested_area\": \"Kompressorraum\"}, \"origin\": {\"name\": \"Compresio Node-RED\", \"sw_version\": \"1.1.0\"}, \"availability\": [{\"topic\": \"kompressor/availability\"}, {\"topic\": \"kompressor/sensor_status/motor_current\", \"value_template\": \"{{ 'online' if value == 'ok' else 'offline' }}\"}], \"availability_mode\": \"all\", \"state_topic\": \"kompressor/motor/running\", \"payload_on\": \"ON\", \"payload_off\": \"OFF\", \"device_class\": \"running\"}], [\"homeassistant/sensor/kompressor/motorstrom/config\", {\"name\": \"Motorstrom\", \"unique_id\": \"kompressor_motorstrom\", \"default_entity_id\": \"sensor.kompressor_motorstrom\", \"device\": {\"identifiers\": [\"kompressor\"], \"name\": \"Kompressor\", \"manufacturer\": \"Compresio\", \"model\": \"Atemluftkompressor, dreistufig\", \"sw_version\": \"Compresio-Flows 1.1.0\", \"suggested_area\": \"Kompressorraum\"}, \"origin\": {\"name\": \"Compresio Node-RED\", \"sw_version\": \"1.1.0\"}, \"availability\": [{\"topic\": \"kompressor/availability\"}, {\"topic\": \"kompressor/sensor_status/motor_current\", \"value_template\": \"{{ 'online' if value == 'ok' else 'offline' }}\"}], \"availability_mode\": \"all\", \"state_topic\": \"kompressor/motor/current\", \"unit_of_measurement\": \"A\", \"device_class\": \"current\", \"state_class\": \"measurement\", \"suggested_display_precision\": 1}], [\"homeassistant/sensor/kompressor/spannung/config\", {\"name\": \"Versorgungsspannung\", \"unique_id\": \"kompressor_spannung\", \"default_entity_id\": \"sensor.kompressor_spannung\", \"device\": {\"identifiers\": [\"kompressor\"], \"name\": \"Kompressor\", \"manufacturer\": \"Compresio\", \"model\": \"Atemluftkompressor, dreistufig\", \"sw_version\": \"Compresio-Flows 1.1.0\", \"suggested_area\": \"Kompressorraum\"}, \"origin\": {\"name\": \"Compresio Node-RED\", \"sw_version\": \"1.1.0\"}, \"availability\": [{\"topic\": \"kompressor/availability\"}, {\"topic\": \"kompressor/sensor_status/supply_voltage\", \"value_template\": \"{{ 'online' if value == 'ok' else 'offline' }}\"}], \"availability_mode\": \"all\", \"state_topic\": \"kompressor/supply/voltage\", \"unit_of_measurement\": \"V\", \"device_class\": \"voltage\", \"state_class\": \"measurement\", \"suggested_display_precision\": 0}], [\"homeassistant/sensor/kompressor/enddruck/config\", {\"name\": \"Enddruck\", \"unique_id\": \"kompressor_enddruck\", \"default_entity_id\": \"sensor.kompressor_enddruck\", \"device\": {\"identifiers\": [\"kompressor\"], \"name\": \"Kompressor\", \"manufacturer\": \"Compresio\", \"model\": \"Atemluftkompressor, dreistufig\", \"sw_version\": \"Compresio-Flows 1.1.0\", \"suggested_area\": \"Kompressorraum\"}, \"origin\": {\"name\": \"Compresio Node-RED\", \"sw_version\": \"1.1.0\"}, \"availability\": [{\"topic\": \"kompressor/availability\"}, {\"topic\": \"kompressor/sensor_status/pressure_final\", \"value_template\": \"{{ 'online' if value == 'ok' else 'offline' }}\"}], \"availability_mode\": \"all\", \"state_topic\": \"kompressor/pressure/final\", \"unit_of_measurement\": \"bar\", \"device_class\": \"pressure\", \"state_class\": \"measurement\", \"suggested_display_precision\": 1}], [\"homeassistant/sensor/kompressor/druckanstieg/config\", {\"name\": \"Druckanstieg\", \"unique_id\": \"kompressor_druckanstieg\", \"default_entity_id\": \"sensor.kompressor_druckanstieg\", \"device\": {\"identifiers\": [\"kompressor\"], \"name\": \"Kompressor\", \"manufacturer\": \"Compresio\", \"model\": \"Atemluftkompressor, dreistufig\", \"sw_version\": \"Compresio-Flows 1.1.0\", \"suggested_area\": \"Kompressorraum\"}, \"origin\": {\"name\": \"Compresio Node-RED\", \"sw_version\": \"1.1.0\"}, \"availability\": [{\"topic\": \"kompressor/availability\"}, {\"topic\": \"kompressor/sensor_status/pressure_final\", \"value_template\": \"{{ 'online' if value == 'ok' else 'offline' }}\"}], \"availability_mode\": \"all\", \"state_topic\": \"kompressor/pressure/rate\", \"unit_of_measurement\": \"bar/min\", \"state_class\": \"measurement\", \"icon\": \"mdi:trending-up\", \"suggested_display_precision\": 1}], [\"homeassistant/sensor/kompressor/temperatur_stufe1/config\", {\"name\": \"Zylindertemperatur Stufe 1\", \"unique_id\": \"kompressor_temperatur_stufe1\", \"default_entity_id\": \"sensor.kompressor_temperatur_stufe_1\", \"device\": {\"identifiers\": [\"kompressor\"], \"name\": \"Kompressor\", \"manufacturer\": \"Compresio\", \"model\": \"Atemluftkompressor, dreistufig\", \"sw_version\": \"Compresio-Flows 1.1.0\", \"suggested_area\": \"Kompressorraum\"}, \"origin\": {\"name\": \"Compresio Node-RED\", \"sw_version\": \"1.1.0\"}, \"availability\": [{\"topic\": \"kompressor/availability\"}, {\"topic\": \"kompressor/sensor_status/temp_stage1\", \"value_template\": \"{{ 'online' if value == 'ok' else 'offline' }}\"}], \"availability_mode\": \"all\", \"state_topic\": \"kompressor/temperature/stage1\", \"unit_of_measurement\": \"°C\", \"device_class\": \"temperature\", \"state_class\": \"measurement\", \"suggested_display_precision\": 1}], [\"homeassistant/sensor/kompressor/temperatur_stufe2/config\", {\"name\": \"Zylindertemperatur Stufe 2\", \"unique_id\": \"kompressor_temperatur_stufe2\", \"default_entity_id\": \"sensor.kompressor_temperatur_stufe_2\", \"device\": {\"identifiers\": [\"kompressor\"], \"name\": \"Kompressor\", \"manufacturer\": \"Compresio\", \"model\": \"Atemluftkompressor, dreistufig\", \"sw_version\": \"Compresio-Flows 1.1.0\", \"suggested_area\": \"Kompressorraum\"}, \"origin\": {\"name\": \"Compresio Node-RED\", \"sw_version\": \"1.1.0\"}, \"availability\": [{\"topic\": \"kompressor/availability\"}, {\"topic\": \"kompressor/sensor_status/temp_stage2\", \"value_template\": \"{{ 'online' if value == 'ok' else 'offline' }}\"}], \"availability_mode\": \"all\", \"state_topic\": \"kompressor/temperature/stage2\", \"unit_of_measurement\": \"°C\", \"device_class\": \"temperature\", \"state_class\": \"measurement\", \"suggested_display_precision\": 1}], [\"homeassistant/sensor/kompressor/temperatur_stufe3/config\", {\"name\": \"Zylindertemperatur Stufe 3\", \"unique_id\": \"kompressor_temperatur_stufe3\", \"default_entity_id\": \"sensor.kompressor_temperatur_stufe_3\", \"device\": {\"identifiers\": [\"kompressor\"], \"name\": \"Kompressor\", \"manufacturer\": \"Compresio\", \"model\": \"Atemluftkompressor, dreistufig\", \"sw_version\": \"Compresio-Flows 1.1.0\", \"suggested_area\": \"Kompressorraum\"}, \"origin\": {\"name\": \"Compresio Node-RED\", \"sw_version\": \"1.1.0\"}, \"availability\": [{\"topic\": \"kompressor/availability\"}, {\"topic\": \"kompressor/sensor_status/temp_stage3\", \"value_template\": \"{{ 'online' if value == 'ok' else 'offline' }}\"}], \"availability_mode\": \"all\", \"state_topic\": \"kompressor/temperature/stage3\", \"unit_of_measurement\": \"°C\", \"device_class\": \"temperature\", \"state_class\": \"measurement\", \"suggested_display_precision\": 1}], [\"homeassistant/sensor/kompressor/temperatur_kuehlspirale12/config\", {\"name\": \"Kühlspirale Stufe 1→2\", \"unique_id\": \"kompressor_temperatur_kuehlspirale12\", \"default_entity_id\": \"sensor.kompressor_temperatur_kuehlspirale_1_2\", \"device\": {\"identifiers\": [\"kompressor\"], \"name\": \"Kompressor\", \"manufacturer\": \"Compresio\", \"model\": \"Atemluftkompressor, dreistufig\", \"sw_version\": \"Compresio-Flows 1.1.0\", \"suggested_area\": \"Kompressorraum\"}, \"origin\": {\"name\": \"Compresio Node-RED\", \"sw_version\": \"1.1.0\"}, \"availability\": [{\"topic\": \"kompressor/availability\"}, {\"topic\": \"kompressor/sensor_status/temp_coil12\", \"value_template\": \"{{ 'online' if value == 'ok' else 'offline' }}\"}], \"availability_mode\": \"all\", \"state_topic\": \"kompressor/temperature/coil12\", \"unit_of_measurement\": \"°C\", \"device_class\": \"temperature\", \"state_class\": \"measurement\", \"suggested_display_precision\": 1, \"icon\": \"mdi:coolant-temperature\"}], [\"homeassistant/sensor/kompressor/temperatur_kuehlspirale23/config\", {\"name\": \"Kühlspirale Stufe 2→3\", \"unique_id\": \"kompressor_temperatur_kuehlspirale23\", \"default_entity_id\": \"sensor.kompressor_temperatur_kuehlspirale_2_3\", \"device\": {\"identifiers\": [\"kompressor\"], \"name\": \"Kompressor\", \"manufacturer\": \"Compresio\", \"model\": \"Atemluftkompressor, dreistufig\", \"sw_version\": \"Compresio-Flows 1.1.0\", \"suggested_area\": \"Kompressorraum\"}, \"origin\": {\"name\": \"Compresio Node-RED\", \"sw_version\": \"1.1.0\"}, \"availability\": [{\"topic\": \"kompressor/availability\"}, {\"topic\": \"kompressor/sensor_status/temp_coil23\", \"value_template\": \"{{ 'online' if value == 'ok' else 'offline' }}\"}], \"availability_mode\": \"all\", \"state_topic\": \"kompressor/temperature/coil23\", \"unit_of_measurement\": \"°C\", \"device_class\": \"temperature\", \"state_class\": \"measurement\", \"suggested_display_precision\": 1, \"icon\": \"mdi:coolant-temperature\"}], [\"homeassistant/sensor/kompressor/raumtemperatur/config\", {\"name\": \"Raumtemperatur Kompressorraum\", \"unique_id\": \"kompressor_raumtemperatur\", \"default_entity_id\": \"sensor.kompressor_raumtemperatur\", \"device\": {\"identifiers\": [\"kompressor\"], \"name\": \"Kompressor\", \"manufacturer\": \"Compresio\", \"model\": \"Atemluftkompressor, dreistufig\", \"sw_version\": \"Compresio-Flows 1.1.0\", \"suggested_area\": \"Kompressorraum\"}, \"origin\": {\"name\": \"Compresio Node-RED\", \"sw_version\": \"1.1.0\"}, \"availability\": [{\"topic\": \"kompressor/availability\"}, {\"topic\": \"kompressor/sensor_status/temp_room\", \"value_template\": \"{{ 'online' if value == 'ok' else 'offline' }}\"}], \"availability_mode\": \"all\", \"state_topic\": \"kompressor/temperature/room\", \"unit_of_measurement\": \"°C\", \"device_class\": \"temperature\", \"state_class\": \"measurement\", \"suggested_display_precision\": 1, \"icon\": \"mdi:home-thermometer-outline\"}], [\"homeassistant/sensor/kompressor/betriebsstunden/config\", {\"name\": \"Betriebsstunden\", \"unique_id\": \"kompressor_betriebsstunden\", \"default_entity_id\": \"sensor.kompressor_betriebsstunden\", \"device\": {\"identifiers\": [\"kompressor\"], \"name\": \"Kompressor\", \"manufacturer\": \"Compresio\", \"model\": \"Atemluftkompressor, dreistufig\", \"sw_version\": \"Compresio-Flows 1.1.0\", \"suggested_area\": \"Kompressorraum\"}, \"origin\": {\"name\": \"Compresio Node-RED\", \"sw_version\": \"1.1.0\"}, \"availability\": [{\"topic\": \"kompressor/availability\"}], \"availability_mode\": \"all\", \"state_topic\": \"kompressor/operating_hours\", \"unit_of_measurement\": \"h\", \"device_class\": \"duration\", \"state_class\": \"total_increasing\", \"suggested_display_precision\": 2, \"icon\": \"mdi:timer-cog-outline\"}], [\"homeassistant/sensor/kompressor/starts/config\", {\"name\": \"Motorstarts\", \"unique_id\": \"kompressor_starts\", \"default_entity_id\": \"sensor.kompressor_starts\", \"device\": {\"identifiers\": [\"kompressor\"], \"name\": \"Kompressor\", \"manufacturer\": \"Compresio\", \"model\": \"Atemluftkompressor, dreistufig\", \"sw_version\": \"Compresio-Flows 1.1.0\", \"suggested_area\": \"Kompressorraum\"}, \"origin\": {\"name\": \"Compresio Node-RED\", \"sw_version\": \"1.1.0\"}, \"availability\": [{\"topic\": \"kompressor/availability\"}], \"availability_mode\": \"all\", \"state_topic\": \"kompressor/motor/starts\", \"state_class\": \"total_increasing\", \"icon\": \"mdi:counter\"}], [\"homeassistant/sensor/kompressor/zyklus_aktuell/config\", {\"name\": \"Aktuelle Laufzeit\", \"unique_id\": \"kompressor_zyklus_aktuell\", \"default_entity_id\": \"sensor.kompressor_zyklus_aktuell\", \"device\": {\"identifiers\": [\"kompressor\"], \"name\": \"Kompressor\", \"manufacturer\": \"Compresio\", \"model\": \"Atemluftkompressor, dreistufig\", \"sw_version\": \"Compresio-Flows 1.1.0\", \"suggested_area\": \"Kompressorraum\"}, \"origin\": {\"name\": \"Compresio Node-RED\", \"sw_version\": \"1.1.0\"}, \"availability\": [{\"topic\": \"kompressor/availability\"}], \"availability_mode\": \"all\", \"state_topic\": \"kompressor/cycle/current_minutes\", \"unit_of_measurement\": \"min\", \"device_class\": \"duration\", \"state_class\": \"measurement\", \"suggested_display_precision\": 1}], [\"homeassistant/sensor/kompressor/zyklus_letzter/config\", {\"name\": \"Letzter Betriebszyklus\", \"unique_id\": \"kompressor_zyklus_letzter\", \"default_entity_id\": \"sensor.kompressor_zyklus_letzter\", \"device\": {\"identifiers\": [\"kompressor\"], \"name\": \"Kompressor\", \"manufacturer\": \"Compresio\", \"model\": \"Atemluftkompressor, dreistufig\", \"sw_version\": \"Compresio-Flows 1.1.0\", \"suggested_area\": \"Kompressorraum\"}, \"origin\": {\"name\": \"Compresio Node-RED\", \"sw_version\": \"1.1.0\"}, \"availability\": [{\"topic\": \"kompressor/availability\"}], \"availability_mode\": \"all\", \"state_topic\": \"kompressor/cycle/last_minutes\", \"unit_of_measurement\": \"min\", \"device_class\": \"duration\", \"suggested_display_precision\": 1}], [\"homeassistant/sensor/kompressor/wartung_status/config\", {\"name\": \"Wartungsstatus\", \"unique_id\": \"kompressor_wartung_status\", \"default_entity_id\": \"sensor.kompressor_wartung_status\", \"device\": {\"identifiers\": [\"kompressor\"], \"name\": \"Kompressor\", \"manufacturer\": \"Compresio\", \"model\": \"Atemluftkompressor, dreistufig\", \"sw_version\": \"Compresio-Flows 1.1.0\", \"suggested_area\": \"Kompressorraum\"}, \"origin\": {\"name\": \"Compresio Node-RED\", \"sw_version\": \"1.1.0\"}, \"availability\": [{\"topic\": \"kompressor/availability\"}], \"availability_mode\": \"all\", \"state_topic\": \"kompressor/maintenance/status\", \"json_attributes_topic\": \"kompressor/maintenance/attr\", \"device_class\": \"enum\", \"options\": [\"ok\", \"bald_faellig\", \"faellig\", \"nicht_festgelegt\"], \"icon\": \"mdi:wrench-clock\"}], [\"homeassistant/sensor/kompressor/filter_status/config\", {\"name\": \"Filterstatus\", \"unique_id\": \"kompressor_filter_status\", \"default_entity_id\": \"sensor.kompressor_filter_status\", \"device\": {\"identifiers\": [\"kompressor\"], \"name\": \"Kompressor\", \"manufacturer\": \"Compresio\", \"model\": \"Atemluftkompressor, dreistufig\", \"sw_version\": \"Compresio-Flows 1.1.0\", \"suggested_area\": \"Kompressorraum\"}, \"origin\": {\"name\": \"Compresio Node-RED\", \"sw_version\": \"1.1.0\"}, \"availability\": [{\"topic\": \"kompressor/availability\"}], \"availability_mode\": \"all\", \"state_topic\": \"kompressor/maintenance/filter_status\", \"device_class\": \"enum\", \"options\": [\"ok\", \"bald_faellig\", \"faellig\", \"nicht_festgelegt\"], \"icon\": \"mdi:air-filter\"}], [\"homeassistant/sensor/kompressor/stunden_seit_wartung/config\", {\"name\": \"Betriebsstunden seit Wartung\", \"unique_id\": \"kompressor_stunden_seit_wartung\", \"default_entity_id\": \"sensor.kompressor_stunden_seit_wartung\", \"device\": {\"identifiers\": [\"kompressor\"], \"name\": \"Kompressor\", \"manufacturer\": \"Compresio\", \"model\": \"Atemluftkompressor, dreistufig\", \"sw_version\": \"Compresio-Flows 1.1.0\", \"suggested_area\": \"Kompressorraum\"}, \"origin\": {\"name\": \"Compresio Node-RED\", \"sw_version\": \"1.1.0\"}, \"availability\": [{\"topic\": \"kompressor/availability\"}], \"availability_mode\": \"all\", \"state_topic\": \"kompressor/maintenance/hours_since\", \"unit_of_measurement\": \"h\", \"device_class\": \"duration\", \"state_class\": \"measurement\", \"suggested_display_precision\": 2}], [\"homeassistant/sensor/kompressor/stunden_seit_filterwechsel/config\", {\"name\": \"Betriebsstunden seit Filterwechsel\", \"unique_id\": \"kompressor_stunden_seit_filterwechsel\", \"default_entity_id\": \"sensor.kompressor_stunden_seit_filterwechsel\", \"device\": {\"identifiers\": [\"kompressor\"], \"name\": \"Kompressor\", \"manufacturer\": \"Compresio\", \"model\": \"Atemluftkompressor, dreistufig\", \"sw_version\": \"Compresio-Flows 1.1.0\", \"suggested_area\": \"Kompressorraum\"}, \"origin\": {\"name\": \"Compresio Node-RED\", \"sw_version\": \"1.1.0\"}, \"availability\": [{\"topic\": \"kompressor/availability\"}], \"availability_mode\": \"all\", \"state_topic\": \"kompressor/maintenance/filter_hours_since\", \"unit_of_measurement\": \"h\", \"device_class\": \"duration\", \"state_class\": \"measurement\", \"suggested_display_precision\": 2}], [\"homeassistant/sensor/kompressor/rest_bis_wartung/config\", {\"name\": \"Restlaufzeit bis Wartung\", \"unique_id\": \"kompressor_rest_bis_wartung\", \"default_entity_id\": \"sensor.kompressor_rest_bis_wartung\", \"device\": {\"identifiers\": [\"kompressor\"], \"name\": \"Kompressor\", \"manufacturer\": \"Compresio\", \"model\": \"Atemluftkompressor, dreistufig\", \"sw_version\": \"Compresio-Flows 1.1.0\", \"suggested_area\": \"Kompressorraum\"}, \"origin\": {\"name\": \"Compresio Node-RED\", \"sw_version\": \"1.1.0\"}, \"availability\": [{\"topic\": \"kompressor/availability\"}], \"availability_mode\": \"all\", \"state_topic\": \"kompressor/maintenance/remaining_h\", \"unit_of_measurement\": \"h\", \"device_class\": \"duration\", \"suggested_display_precision\": 1}], [\"homeassistant/sensor/kompressor/rest_bis_filterwechsel/config\", {\"name\": \"Restlaufzeit bis Filterwechsel\", \"unique_id\": \"kompressor_rest_bis_filterwechsel\", \"default_entity_id\": \"sensor.kompressor_rest_bis_filterwechsel\", \"device\": {\"identifiers\": [\"kompressor\"], \"name\": \"Kompressor\", \"manufacturer\": \"Compresio\", \"model\": \"Atemluftkompressor, dreistufig\", \"sw_version\": \"Compresio-Flows 1.1.0\", \"suggested_area\": \"Kompressorraum\"}, \"origin\": {\"name\": \"Compresio Node-RED\", \"sw_version\": \"1.1.0\"}, \"availability\": [{\"topic\": \"kompressor/availability\"}], \"availability_mode\": \"all\", \"state_topic\": \"kompressor/maintenance/filter_remaining_h\", \"unit_of_measurement\": \"h\", \"device_class\": \"duration\", \"suggested_display_precision\": 1}], [\"homeassistant/number/kompressor/wartungsintervall/config\", {\"name\": \"Wartungsintervall (0 = nicht festgelegt)\", \"unique_id\": \"kompressor_wartungsintervall\", \"default_entity_id\": \"number.kompressor_wartungsintervall\", \"device\": {\"identifiers\": [\"kompressor\"], \"name\": \"Kompressor\", \"manufacturer\": \"Compresio\", \"model\": \"Atemluftkompressor, dreistufig\", \"sw_version\": \"Compresio-Flows 1.1.0\", \"suggested_area\": \"Kompressorraum\"}, \"origin\": {\"name\": \"Compresio Node-RED\", \"sw_version\": \"1.1.0\"}, \"availability\": [{\"topic\": \"kompressor/availability\"}], \"availability_mode\": \"all\", \"state_topic\": \"kompressor/maintenance/config/interval_h\", \"command_topic\": \"kompressor/maintenance/config/interval_h/set\", \"min\": 0, \"max\": 10000, \"step\": 0.01, \"mode\": \"box\", \"unit_of_measurement\": \"h\", \"entity_category\": \"config\", \"icon\": \"mdi:wrench-cog\", \"retain\": false}], [\"homeassistant/number/kompressor/filterintervall/config\", {\"name\": \"Filterwechselintervall (0 = nicht festgelegt)\", \"unique_id\": \"kompressor_filterintervall\", \"default_entity_id\": \"number.kompressor_filterintervall\", \"device\": {\"identifiers\": [\"kompressor\"], \"name\": \"Kompressor\", \"manufacturer\": \"Compresio\", \"model\": \"Atemluftkompressor, dreistufig\", \"sw_version\": \"Compresio-Flows 1.1.0\", \"suggested_area\": \"Kompressorraum\"}, \"origin\": {\"name\": \"Compresio Node-RED\", \"sw_version\": \"1.1.0\"}, \"availability\": [{\"topic\": \"kompressor/availability\"}], \"availability_mode\": \"all\", \"state_topic\": \"kompressor/maintenance/config/filter_interval_h\", \"command_topic\": \"kompressor/maintenance/config/filter_interval_h/set\", \"min\": 0, \"max\": 10000, \"step\": 0.01, \"mode\": \"box\", \"unit_of_measurement\": \"h\", \"entity_category\": \"config\", \"icon\": \"mdi:air-filter\", \"retain\": false}], [\"homeassistant/button/kompressor/wartung_erfasst/config\", {\"name\": \"Wartung durchgeführt\", \"unique_id\": \"kompressor_wartung_erfasst\", \"default_entity_id\": \"button.kompressor_wartung_erfasst\", \"device\": {\"identifiers\": [\"kompressor\"], \"name\": \"Kompressor\", \"manufacturer\": \"Compresio\", \"model\": \"Atemluftkompressor, dreistufig\", \"sw_version\": \"Compresio-Flows 1.1.0\", \"suggested_area\": \"Kompressorraum\"}, \"origin\": {\"name\": \"Compresio Node-RED\", \"sw_version\": \"1.1.0\"}, \"availability\": [{\"topic\": \"kompressor/availability\"}], \"availability_mode\": \"all\", \"command_topic\": \"kompressor/maintenance/service_done/set\", \"payload_press\": \"PRESS\", \"icon\": \"mdi:wrench-check\", \"entity_category\": \"config\"}], [\"homeassistant/button/kompressor/filter_erfasst/config\", {\"name\": \"Filterwechsel durchgeführt\", \"unique_id\": \"kompressor_filter_erfasst\", \"default_entity_id\": \"button.kompressor_filter_erfasst\", \"device\": {\"identifiers\": [\"kompressor\"], \"name\": \"Kompressor\", \"manufacturer\": \"Compresio\", \"model\": \"Atemluftkompressor, dreistufig\", \"sw_version\": \"Compresio-Flows 1.1.0\", \"suggested_area\": \"Kompressorraum\"}, \"origin\": {\"name\": \"Compresio Node-RED\", \"sw_version\": \"1.1.0\"}, \"availability\": [{\"topic\": \"kompressor/availability\"}], \"availability_mode\": \"all\", \"command_topic\": \"kompressor/maintenance/filter_done/set\", \"payload_press\": \"PRESS\", \"icon\": \"mdi:air-filter\", \"entity_category\": \"config\"}], [\"homeassistant/number/kompressor/enddruck_soll/config\", {\"name\": \"Enddruck-Sollwert (Anzeige, 0 = nicht festgelegt)\", \"unique_id\": \"kompressor_enddruck_soll\", \"default_entity_id\": \"number.kompressor_enddruck_soll\", \"device\": {\"identifiers\": [\"kompressor\"], \"name\": \"Kompressor\", \"manufacturer\": \"Compresio\", \"model\": \"Atemluftkompressor, dreistufig\", \"sw_version\": \"Compresio-Flows 1.1.0\", \"suggested_area\": \"Kompressorraum\"}, \"origin\": {\"name\": \"Compresio Node-RED\", \"sw_version\": \"1.1.0\"}, \"availability\": [{\"topic\": \"kompressor/availability\"}], \"availability_mode\": \"all\", \"state_topic\": \"kompressor/maintenance/config/pressure_setpoint_bar\", \"command_topic\": \"kompressor/maintenance/config/pressure_setpoint_bar/set\", \"min\": 0, \"max\": 450, \"step\": 1, \"mode\": \"box\", \"unit_of_measurement\": \"bar\", \"entity_category\": \"config\", \"icon\": \"mdi:target\", \"retain\": false}], [\"homeassistant/number/kompressor/druckanstieg_referenz/config\", {\"name\": \"Referenz Druckanstieg (0 = nicht festgelegt)\", \"unique_id\": \"kompressor_druckanstieg_referenz\", \"default_entity_id\": \"number.kompressor_druckanstieg_referenz\", \"device\": {\"identifiers\": [\"kompressor\"], \"name\": \"Kompressor\", \"manufacturer\": \"Compresio\", \"model\": \"Atemluftkompressor, dreistufig\", \"sw_version\": \"Compresio-Flows 1.1.0\", \"suggested_area\": \"Kompressorraum\"}, \"origin\": {\"name\": \"Compresio Node-RED\", \"sw_version\": \"1.1.0\"}, \"availability\": [{\"topic\": \"kompressor/availability\"}], \"availability_mode\": \"all\", \"state_topic\": \"kompressor/maintenance/config/rate_reference_bar_min\", \"command_topic\": \"kompressor/maintenance/config/rate_reference_bar_min/set\", \"min\": 0, \"max\": 100, \"step\": 0.1, \"mode\": \"box\", \"unit_of_measurement\": \"bar/min\", \"entity_category\": \"config\", \"icon\": \"mdi:chart-bell-curve\", \"retain\": false}], [\"homeassistant/sensor/kompressor/zyklus_druckanstieg/config\", {\"name\": \"Druckanstieg letzter vergleichbarer Zyklus\", \"unique_id\": \"kompressor_zyklus_druckanstieg\", \"default_entity_id\": \"sensor.kompressor_zyklus_druckanstieg\", \"device\": {\"identifiers\": [\"kompressor\"], \"name\": \"Kompressor\", \"manufacturer\": \"Compresio\", \"model\": \"Atemluftkompressor, dreistufig\", \"sw_version\": \"Compresio-Flows 1.1.0\", \"suggested_area\": \"Kompressorraum\"}, \"origin\": {\"name\": \"Compresio Node-RED\", \"sw_version\": \"1.1.0\"}, \"availability\": [{\"topic\": \"kompressor/availability\"}], \"availability_mode\": \"all\", \"state_topic\": \"kompressor/cycle/last_rate\", \"unit_of_measurement\": \"bar/min\", \"state_class\": \"measurement\", \"icon\": \"mdi:chart-line-variant\", \"suggested_display_precision\": 1}], [\"homeassistant/event/kompressor/ereignis/config\", {\"name\": \"Ereignis\", \"unique_id\": \"kompressor_ereignis\", \"default_entity_id\": \"event.kompressor_ereignis\", \"device\": {\"identifiers\": [\"kompressor\"], \"name\": \"Kompressor\", \"manufacturer\": \"Compresio\", \"model\": \"Atemluftkompressor, dreistufig\", \"sw_version\": \"Compresio-Flows 1.1.0\", \"suggested_area\": \"Kompressorraum\"}, \"origin\": {\"name\": \"Compresio Node-RED\", \"sw_version\": \"1.1.0\"}, \"availability\": [{\"topic\": \"kompressor/availability\"}], \"availability_mode\": \"all\", \"state_topic\": \"kompressor/event\", \"icon\": \"mdi:timeline-text-outline\", \"event_types\": [\"motorstart\", \"motorstopp\", \"warnung\", \"stoerung\", \"behoben\", \"kommunikationsausfall\", \"sensorfehler\", \"wartung\", \"filterwechsel\", \"wartungseintrag\", \"konfiguration\", \"simulation\", \"sensorknoten\", \"freigabe\"]}], [\"homeassistant/sensor/kompressor/meldungen/config\", {\"name\": \"Aktive Meldungen\", \"unique_id\": \"kompressor_meldungen\", \"default_entity_id\": \"sensor.kompressor_meldungen\", \"device\": {\"identifiers\": [\"kompressor\"], \"name\": \"Kompressor\", \"manufacturer\": \"Compresio\", \"model\": \"Atemluftkompressor, dreistufig\", \"sw_version\": \"Compresio-Flows 1.1.0\", \"suggested_area\": \"Kompressorraum\"}, \"origin\": {\"name\": \"Compresio Node-RED\", \"sw_version\": \"1.1.0\"}, \"availability\": [{\"topic\": \"kompressor/availability\"}], \"availability_mode\": \"all\", \"state_topic\": \"kompressor/alerts\", \"value_template\": \"{{ value_json.count }}\", \"json_attributes_topic\": \"kompressor/alerts\", \"state_class\": \"measurement\", \"icon\": \"mdi:alert-circle-outline\"}], [\"homeassistant/binary_sensor/kompressor/meldung_comm/config\", {\"name\": \"Meldung Kommunikation\", \"unique_id\": \"kompressor_meldung_comm\", \"default_entity_id\": \"binary_sensor.kompressor_meldung_comm\", \"device\": {\"identifiers\": [\"kompressor\"], \"name\": \"Kompressor\", \"manufacturer\": \"Compresio\", \"model\": \"Atemluftkompressor, dreistufig\", \"sw_version\": \"Compresio-Flows 1.1.0\", \"suggested_area\": \"Kompressorraum\"}, \"origin\": {\"name\": \"Compresio Node-RED\", \"sw_version\": \"1.1.0\"}, \"availability\": [{\"topic\": \"kompressor/availability\"}], \"availability_mode\": \"all\", \"state_topic\": \"kompressor/alert/comm\", \"payload_on\": \"ON\", \"payload_off\": \"OFF\", \"device_class\": \"problem\"}], [\"homeassistant/binary_sensor/kompressor/meldung_sensor_data/config\", {\"name\": \"Meldung Sensordaten\", \"unique_id\": \"kompressor_meldung_sensor_data\", \"default_entity_id\": \"binary_sensor.kompressor_meldung_sensor_data\", \"device\": {\"identifiers\": [\"kompressor\"], \"name\": \"Kompressor\", \"manufacturer\": \"Compresio\", \"model\": \"Atemluftkompressor, dreistufig\", \"sw_version\": \"Compresio-Flows 1.1.0\", \"suggested_area\": \"Kompressorraum\"}, \"origin\": {\"name\": \"Compresio Node-RED\", \"sw_version\": \"1.1.0\"}, \"availability\": [{\"topic\": \"kompressor/availability\"}], \"availability_mode\": \"all\", \"state_topic\": \"kompressor/alert/sensor_data\", \"payload_on\": \"ON\", \"payload_off\": \"OFF\", \"device_class\": \"problem\"}], [\"homeassistant/binary_sensor/kompressor/meldung_temperature/config\", {\"name\": \"Meldung Temperatur\", \"unique_id\": \"kompressor_meldung_temperature\", \"default_entity_id\": \"binary_sensor.kompressor_meldung_temperature\", \"device\": {\"identifiers\": [\"kompressor\"], \"name\": \"Kompressor\", \"manufacturer\": \"Compresio\", \"model\": \"Atemluftkompressor, dreistufig\", \"sw_version\": \"Compresio-Flows 1.1.0\", \"suggested_area\": \"Kompressorraum\"}, \"origin\": {\"name\": \"Compresio Node-RED\", \"sw_version\": \"1.1.0\"}, \"availability\": [{\"topic\": \"kompressor/availability\"}], \"availability_mode\": \"all\", \"state_topic\": \"kompressor/alert/temperature\", \"payload_on\": \"ON\", \"payload_off\": \"OFF\", \"device_class\": \"problem\"}], [\"homeassistant/binary_sensor/kompressor/meldung_pressure/config\", {\"name\": \"Meldung Druck\", \"unique_id\": \"kompressor_meldung_pressure\", \"default_entity_id\": \"binary_sensor.kompressor_meldung_pressure\", \"device\": {\"identifiers\": [\"kompressor\"], \"name\": \"Kompressor\", \"manufacturer\": \"Compresio\", \"model\": \"Atemluftkompressor, dreistufig\", \"sw_version\": \"Compresio-Flows 1.1.0\", \"suggested_area\": \"Kompressorraum\"}, \"origin\": {\"name\": \"Compresio Node-RED\", \"sw_version\": \"1.1.0\"}, \"availability\": [{\"topic\": \"kompressor/availability\"}], \"availability_mode\": \"all\", \"state_topic\": \"kompressor/alert/pressure\", \"payload_on\": \"ON\", \"payload_off\": \"OFF\", \"device_class\": \"problem\"}], [\"homeassistant/binary_sensor/kompressor/meldung_maintenance/config\", {\"name\": \"Meldung Wartung\", \"unique_id\": \"kompressor_meldung_maintenance\", \"default_entity_id\": \"binary_sensor.kompressor_meldung_maintenance\", \"device\": {\"identifiers\": [\"kompressor\"], \"name\": \"Kompressor\", \"manufacturer\": \"Compresio\", \"model\": \"Atemluftkompressor, dreistufig\", \"sw_version\": \"Compresio-Flows 1.1.0\", \"suggested_area\": \"Kompressorraum\"}, \"origin\": {\"name\": \"Compresio Node-RED\", \"sw_version\": \"1.1.0\"}, \"availability\": [{\"topic\": \"kompressor/availability\"}], \"availability_mode\": \"all\", \"state_topic\": \"kompressor/alert/maintenance\", \"payload_on\": \"ON\", \"payload_off\": \"OFF\", \"device_class\": \"problem\"}], [\"homeassistant/binary_sensor/kompressor/meldung_database/config\", {\"name\": \"Meldung Datenbank\", \"unique_id\": \"kompressor_meldung_database\", \"default_entity_id\": \"binary_sensor.kompressor_meldung_database\", \"device\": {\"identifiers\": [\"kompressor\"], \"name\": \"Kompressor\", \"manufacturer\": \"Compresio\", \"model\": \"Atemluftkompressor, dreistufig\", \"sw_version\": \"Compresio-Flows 1.1.0\", \"suggested_area\": \"Kompressorraum\"}, \"origin\": {\"name\": \"Compresio Node-RED\", \"sw_version\": \"1.1.0\"}, \"availability\": [{\"topic\": \"kompressor/availability\"}], \"availability_mode\": \"all\", \"state_topic\": \"kompressor/alert/database\", \"payload_on\": \"ON\", \"payload_off\": \"OFF\", \"device_class\": \"problem\"}], [\"homeassistant/sensor/kompressor/sensorstatus_pressure_final/config\", {\"name\": \"Sensorstatus Enddruck\", \"unique_id\": \"kompressor_sensorstatus_pressure_final\", \"default_entity_id\": \"sensor.kompressor_sensorstatus_pressure_final\", \"device\": {\"identifiers\": [\"kompressor\"], \"name\": \"Kompressor\", \"manufacturer\": \"Compresio\", \"model\": \"Atemluftkompressor, dreistufig\", \"sw_version\": \"Compresio-Flows 1.1.0\", \"suggested_area\": \"Kompressorraum\"}, \"origin\": {\"name\": \"Compresio Node-RED\", \"sw_version\": \"1.1.0\"}, \"availability\": [{\"topic\": \"kompressor/availability\"}], \"availability_mode\": \"all\", \"state_topic\": \"kompressor/sensor_status/pressure_final\", \"device_class\": \"enum\", \"options\": [\"ok\", \"keine_daten\", \"ungueltig\"], \"entity_category\": \"diagnostic\", \"icon\": \"mdi:access-point-check\"}], [\"homeassistant/sensor/kompressor/sensorstatus_temp_stage1/config\", {\"name\": \"Sensorstatus Zylinder Stufe 1\", \"unique_id\": \"kompressor_sensorstatus_temp_stage1\", \"default_entity_id\": \"sensor.kompressor_sensorstatus_temp_stage1\", \"device\": {\"identifiers\": [\"kompressor\"], \"name\": \"Kompressor\", \"manufacturer\": \"Compresio\", \"model\": \"Atemluftkompressor, dreistufig\", \"sw_version\": \"Compresio-Flows 1.1.0\", \"suggested_area\": \"Kompressorraum\"}, \"origin\": {\"name\": \"Compresio Node-RED\", \"sw_version\": \"1.1.0\"}, \"availability\": [{\"topic\": \"kompressor/availability\"}], \"availability_mode\": \"all\", \"state_topic\": \"kompressor/sensor_status/temp_stage1\", \"device_class\": \"enum\", \"options\": [\"ok\", \"keine_daten\", \"ungueltig\"], \"entity_category\": \"diagnostic\", \"icon\": \"mdi:access-point-check\"}], [\"homeassistant/sensor/kompressor/sensorstatus_temp_coil12/config\", {\"name\": \"Sensorstatus Kühlspirale 1→2\", \"unique_id\": \"kompressor_sensorstatus_temp_coil12\", \"default_entity_id\": \"sensor.kompressor_sensorstatus_temp_coil12\", \"device\": {\"identifiers\": [\"kompressor\"], \"name\": \"Kompressor\", \"manufacturer\": \"Compresio\", \"model\": \"Atemluftkompressor, dreistufig\", \"sw_version\": \"Compresio-Flows 1.1.0\", \"suggested_area\": \"Kompressorraum\"}, \"origin\": {\"name\": \"Compresio Node-RED\", \"sw_version\": \"1.1.0\"}, \"availability\": [{\"topic\": \"kompressor/availability\"}], \"availability_mode\": \"all\", \"state_topic\": \"kompressor/sensor_status/temp_coil12\", \"device_class\": \"enum\", \"options\": [\"ok\", \"keine_daten\", \"ungueltig\"], \"entity_category\": \"diagnostic\", \"icon\": \"mdi:access-point-check\"}], [\"homeassistant/sensor/kompressor/sensorstatus_temp_stage2/config\", {\"name\": \"Sensorstatus Zylinder Stufe 2\", \"unique_id\": \"kompressor_sensorstatus_temp_stage2\", \"default_entity_id\": \"sensor.kompressor_sensorstatus_temp_stage2\", \"device\": {\"identifiers\": [\"kompressor\"], \"name\": \"Kompressor\", \"manufacturer\": \"Compresio\", \"model\": \"Atemluftkompressor, dreistufig\", \"sw_version\": \"Compresio-Flows 1.1.0\", \"suggested_area\": \"Kompressorraum\"}, \"origin\": {\"name\": \"Compresio Node-RED\", \"sw_version\": \"1.1.0\"}, \"availability\": [{\"topic\": \"kompressor/availability\"}], \"availability_mode\": \"all\", \"state_topic\": \"kompressor/sensor_status/temp_stage2\", \"device_class\": \"enum\", \"options\": [\"ok\", \"keine_daten\", \"ungueltig\"], \"entity_category\": \"diagnostic\", \"icon\": \"mdi:access-point-check\"}], [\"homeassistant/sensor/kompressor/sensorstatus_temp_coil23/config\", {\"name\": \"Sensorstatus Kühlspirale 2→3\", \"unique_id\": \"kompressor_sensorstatus_temp_coil23\", \"default_entity_id\": \"sensor.kompressor_sensorstatus_temp_coil23\", \"device\": {\"identifiers\": [\"kompressor\"], \"name\": \"Kompressor\", \"manufacturer\": \"Compresio\", \"model\": \"Atemluftkompressor, dreistufig\", \"sw_version\": \"Compresio-Flows 1.1.0\", \"suggested_area\": \"Kompressorraum\"}, \"origin\": {\"name\": \"Compresio Node-RED\", \"sw_version\": \"1.1.0\"}, \"availability\": [{\"topic\": \"kompressor/availability\"}], \"availability_mode\": \"all\", \"state_topic\": \"kompressor/sensor_status/temp_coil23\", \"device_class\": \"enum\", \"options\": [\"ok\", \"keine_daten\", \"ungueltig\"], \"entity_category\": \"diagnostic\", \"icon\": \"mdi:access-point-check\"}], [\"homeassistant/sensor/kompressor/sensorstatus_temp_stage3/config\", {\"name\": \"Sensorstatus Zylinder Stufe 3\", \"unique_id\": \"kompressor_sensorstatus_temp_stage3\", \"default_entity_id\": \"sensor.kompressor_sensorstatus_temp_stage3\", \"device\": {\"identifiers\": [\"kompressor\"], \"name\": \"Kompressor\", \"manufacturer\": \"Compresio\", \"model\": \"Atemluftkompressor, dreistufig\", \"sw_version\": \"Compresio-Flows 1.1.0\", \"suggested_area\": \"Kompressorraum\"}, \"origin\": {\"name\": \"Compresio Node-RED\", \"sw_version\": \"1.1.0\"}, \"availability\": [{\"topic\": \"kompressor/availability\"}], \"availability_mode\": \"all\", \"state_topic\": \"kompressor/sensor_status/temp_stage3\", \"device_class\": \"enum\", \"options\": [\"ok\", \"keine_daten\", \"ungueltig\"], \"entity_category\": \"diagnostic\", \"icon\": \"mdi:access-point-check\"}], [\"homeassistant/sensor/kompressor/sensorstatus_temp_room/config\", {\"name\": \"Sensorstatus Raumtemperatur\", \"unique_id\": \"kompressor_sensorstatus_temp_room\", \"default_entity_id\": \"sensor.kompressor_sensorstatus_temp_room\", \"device\": {\"identifiers\": [\"kompressor\"], \"name\": \"Kompressor\", \"manufacturer\": \"Compresio\", \"model\": \"Atemluftkompressor, dreistufig\", \"sw_version\": \"Compresio-Flows 1.1.0\", \"suggested_area\": \"Kompressorraum\"}, \"origin\": {\"name\": \"Compresio Node-RED\", \"sw_version\": \"1.1.0\"}, \"availability\": [{\"topic\": \"kompressor/availability\"}], \"availability_mode\": \"all\", \"state_topic\": \"kompressor/sensor_status/temp_room\", \"device_class\": \"enum\", \"options\": [\"ok\", \"keine_daten\", \"ungueltig\"], \"entity_category\": \"diagnostic\", \"icon\": \"mdi:access-point-check\"}], [\"homeassistant/sensor/kompressor/sensorstatus_motor_current/config\", {\"name\": \"Sensorstatus Motorstrom\", \"unique_id\": \"kompressor_sensorstatus_motor_current\", \"default_entity_id\": \"sensor.kompressor_sensorstatus_motor_current\", \"device\": {\"identifiers\": [\"kompressor\"], \"name\": \"Kompressor\", \"manufacturer\": \"Compresio\", \"model\": \"Atemluftkompressor, dreistufig\", \"sw_version\": \"Compresio-Flows 1.1.0\", \"suggested_area\": \"Kompressorraum\"}, \"origin\": {\"name\": \"Compresio Node-RED\", \"sw_version\": \"1.1.0\"}, \"availability\": [{\"topic\": \"kompressor/availability\"}], \"availability_mode\": \"all\", \"state_topic\": \"kompressor/sensor_status/motor_current\", \"device_class\": \"enum\", \"options\": [\"ok\", \"keine_daten\", \"ungueltig\"], \"entity_category\": \"diagnostic\", \"icon\": \"mdi:access-point-check\"}], [\"homeassistant/sensor/kompressor/sensorstatus_supply_voltage/config\", {\"name\": \"Sensorstatus Versorgungsspannung\", \"unique_id\": \"kompressor_sensorstatus_supply_voltage\", \"default_entity_id\": \"sensor.kompressor_sensorstatus_supply_voltage\", \"device\": {\"identifiers\": [\"kompressor\"], \"name\": \"Kompressor\", \"manufacturer\": \"Compresio\", \"model\": \"Atemluftkompressor, dreistufig\", \"sw_version\": \"Compresio-Flows 1.1.0\", \"suggested_area\": \"Kompressorraum\"}, \"origin\": {\"name\": \"Compresio Node-RED\", \"sw_version\": \"1.1.0\"}, \"availability\": [{\"topic\": \"kompressor/availability\"}], \"availability_mode\": \"all\", \"state_topic\": \"kompressor/sensor_status/supply_voltage\", \"device_class\": \"enum\", \"options\": [\"ok\", \"keine_daten\", \"ungueltig\"], \"entity_category\": \"diagnostic\", \"icon\": \"mdi:access-point-check\"}], [\"homeassistant/sensor/kompressor/heartbeat/config\", {\"name\": \"Node-RED Heartbeat\", \"unique_id\": \"kompressor_heartbeat\", \"default_entity_id\": \"sensor.kompressor_heartbeat\", \"device\": {\"identifiers\": [\"kompressor\"], \"name\": \"Kompressor\", \"manufacturer\": \"Compresio\", \"model\": \"Atemluftkompressor, dreistufig\", \"sw_version\": \"Compresio-Flows 1.1.0\", \"suggested_area\": \"Kompressorraum\"}, \"origin\": {\"name\": \"Compresio Node-RED\", \"sw_version\": \"1.1.0\"}, \"availability\": [{\"topic\": \"kompressor/availability\"}], \"availability_mode\": \"all\", \"state_topic\": \"kompressor/system/heartbeat\", \"device_class\": \"timestamp\", \"entity_category\": \"diagnostic\", \"json_attributes_topic\": \"kompressor/system/attr\"}], [\"homeassistant/sensor/kompressor/influxdb/config\", {\"name\": \"InfluxDB\", \"unique_id\": \"kompressor_influxdb\", \"default_entity_id\": \"sensor.kompressor_influxdb\", \"device\": {\"identifiers\": [\"kompressor\"], \"name\": \"Kompressor\", \"manufacturer\": \"Compresio\", \"model\": \"Atemluftkompressor, dreistufig\", \"sw_version\": \"Compresio-Flows 1.1.0\", \"suggested_area\": \"Kompressorraum\"}, \"origin\": {\"name\": \"Compresio Node-RED\", \"sw_version\": \"1.1.0\"}, \"availability\": [{\"topic\": \"kompressor/availability\"}], \"availability_mode\": \"all\", \"state_topic\": \"kompressor/system/influxdb\", \"device_class\": \"enum\", \"options\": [\"ok\", \"schreibfehler\", \"nicht_erreichbar\", \"unbekannt\"], \"entity_category\": \"diagnostic\", \"icon\": \"mdi:database\"}], [\"homeassistant/sensor/kompressor/db_puffer/config\", {\"name\": \"DB-Puffer\", \"unique_id\": \"kompressor_db_puffer\", \"default_entity_id\": \"sensor.kompressor_db_puffer\", \"device\": {\"identifiers\": [\"kompressor\"], \"name\": \"Kompressor\", \"manufacturer\": \"Compresio\", \"model\": \"Atemluftkompressor, dreistufig\", \"sw_version\": \"Compresio-Flows 1.1.0\", \"suggested_area\": \"Kompressorraum\"}, \"origin\": {\"name\": \"Compresio Node-RED\", \"sw_version\": \"1.1.0\"}, \"availability\": [{\"topic\": \"kompressor/availability\"}], \"availability_mode\": \"all\", \"state_topic\": \"kompressor/system/db_buffer\", \"unit_of_measurement\": \"Punkte\", \"state_class\": \"measurement\", \"entity_category\": \"diagnostic\", \"icon\": \"mdi:tray-full\"}], [\"homeassistant/sensor/kompressor/nachrichtenrate/config\", {\"name\": \"Nachrichtenrate\", \"unique_id\": \"kompressor_nachrichtenrate\", \"default_entity_id\": \"sensor.kompressor_nachrichtenrate\", \"device\": {\"identifiers\": [\"kompressor\"], \"name\": \"Kompressor\", \"manufacturer\": \"Compresio\", \"model\": \"Atemluftkompressor, dreistufig\", \"sw_version\": \"Compresio-Flows 1.1.0\", \"suggested_area\": \"Kompressorraum\"}, \"origin\": {\"name\": \"Compresio Node-RED\", \"sw_version\": \"1.1.0\"}, \"availability\": [{\"topic\": \"kompressor/availability\"}], \"availability_mode\": \"all\", \"state_topic\": \"kompressor/system/rx_per_min\", \"unit_of_measurement\": \"1/min\", \"state_class\": \"measurement\", \"entity_category\": \"diagnostic\", \"icon\": \"mdi:swap-vertical\"}], [\"homeassistant/sensor/kompressor/ungueltige_nachrichten/config\", {\"name\": \"Ungültige Nachrichten\", \"unique_id\": \"kompressor_ungueltige_nachrichten\", \"default_entity_id\": \"sensor.kompressor_ungueltige_nachrichten\", \"device\": {\"identifiers\": [\"kompressor\"], \"name\": \"Kompressor\", \"manufacturer\": \"Compresio\", \"model\": \"Atemluftkompressor, dreistufig\", \"sw_version\": \"Compresio-Flows 1.1.0\", \"suggested_area\": \"Kompressorraum\"}, \"origin\": {\"name\": \"Compresio Node-RED\", \"sw_version\": \"1.1.0\"}, \"availability\": [{\"topic\": \"kompressor/availability\"}], \"availability_mode\": \"all\", \"state_topic\": \"kompressor/system/invalid_total\", \"state_class\": \"total_increasing\", \"entity_category\": \"diagnostic\", \"icon\": \"mdi:alert-octagon-outline\"}], [\"homeassistant/sensor/kompressor/duplikate/config\", {\"name\": \"Verworfene Duplikate\", \"unique_id\": \"kompressor_duplikate\", \"default_entity_id\": \"sensor.kompressor_duplikate\", \"device\": {\"identifiers\": [\"kompressor\"], \"name\": \"Kompressor\", \"manufacturer\": \"Compresio\", \"model\": \"Atemluftkompressor, dreistufig\", \"sw_version\": \"Compresio-Flows 1.1.0\", \"suggested_area\": \"Kompressorraum\"}, \"origin\": {\"name\": \"Compresio Node-RED\", \"sw_version\": \"1.1.0\"}, \"availability\": [{\"topic\": \"kompressor/availability\"}], \"availability_mode\": \"all\", \"state_topic\": \"kompressor/system/duplicates_total\", \"state_class\": \"total_increasing\", \"entity_category\": \"diagnostic\", \"icon\": \"mdi:content-duplicate\"}], [\"homeassistant/sensor/kompressor/zeitstempel_korrigiert/config\", {\"name\": \"Korrigierte Zeitstempel\", \"unique_id\": \"kompressor_zeitstempel_korrigiert\", \"default_entity_id\": \"sensor.kompressor_zeitstempel_korrigiert\", \"device\": {\"identifiers\": [\"kompressor\"], \"name\": \"Kompressor\", \"manufacturer\": \"Compresio\", \"model\": \"Atemluftkompressor, dreistufig\", \"sw_version\": \"Compresio-Flows 1.1.0\", \"suggested_area\": \"Kompressorraum\"}, \"origin\": {\"name\": \"Compresio Node-RED\", \"sw_version\": \"1.1.0\"}, \"availability\": [{\"topic\": \"kompressor/availability\"}], \"availability_mode\": \"all\", \"state_topic\": \"kompressor/system/ts_corrected_total\", \"state_class\": \"total_increasing\", \"entity_category\": \"diagnostic\", \"icon\": \"mdi:clock-alert-outline\"}], [\"homeassistant/sensor/kompressor/datenalter/config\", {\"name\": \"Alter der letzten Messung\", \"unique_id\": \"kompressor_datenalter\", \"default_entity_id\": \"sensor.kompressor_datenalter\", \"device\": {\"identifiers\": [\"kompressor\"], \"name\": \"Kompressor\", \"manufacturer\": \"Compresio\", \"model\": \"Atemluftkompressor, dreistufig\", \"sw_version\": \"Compresio-Flows 1.1.0\", \"suggested_area\": \"Kompressorraum\"}, \"origin\": {\"name\": \"Compresio Node-RED\", \"sw_version\": \"1.1.0\"}, \"availability\": [{\"topic\": \"kompressor/availability\"}], \"availability_mode\": \"all\", \"state_topic\": \"kompressor/system/data_age_s\", \"unit_of_measurement\": \"s\", \"device_class\": \"duration\", \"state_class\": \"measurement\", \"entity_category\": \"diagnostic\"}], [\"homeassistant/sensor/kompressor/nodered_laufzeit/config\", {\"name\": \"Node-RED Laufzeit seit Deploy\", \"unique_id\": \"kompressor_nodered_laufzeit\", \"default_entity_id\": \"sensor.kompressor_nodered_laufzeit\", \"device\": {\"identifiers\": [\"kompressor\"], \"name\": \"Kompressor\", \"manufacturer\": \"Compresio\", \"model\": \"Atemluftkompressor, dreistufig\", \"sw_version\": \"Compresio-Flows 1.1.0\", \"suggested_area\": \"Kompressorraum\"}, \"origin\": {\"name\": \"Compresio Node-RED\", \"sw_version\": \"1.1.0\"}, \"availability\": [{\"topic\": \"kompressor/availability\"}], \"availability_mode\": \"all\", \"state_topic\": \"kompressor/system/uptime_h\", \"unit_of_measurement\": \"h\", \"device_class\": \"duration\", \"entity_category\": \"diagnostic\", \"suggested_display_precision\": 1}], [\"homeassistant/switch/kompressor/simulation/config\", {\"name\": \"Simulation\", \"unique_id\": \"kompressor_simulation\", \"default_entity_id\": \"switch.kompressor_simulation\", \"device\": {\"identifiers\": [\"kompressor\"], \"name\": \"Kompressor\", \"manufacturer\": \"Compresio\", \"model\": \"Atemluftkompressor, dreistufig\", \"sw_version\": \"Compresio-Flows 1.1.0\", \"suggested_area\": \"Kompressorraum\"}, \"origin\": {\"name\": \"Compresio Node-RED\", \"sw_version\": \"1.1.0\"}, \"availability\": [{\"topic\": \"kompressor/availability\"}], \"availability_mode\": \"all\", \"state_topic\": \"kompressor/sim/enabled\", \"command_topic\": \"kompressor/sim/enabled/set\", \"payload_on\": \"ON\", \"payload_off\": \"OFF\", \"icon\": \"mdi:test-tube\", \"entity_category\": \"config\", \"retain\": false}], [\"homeassistant/select/kompressor/simulation_szenario/config\", {\"name\": \"Simulationsszenario\", \"unique_id\": \"kompressor_simulation_szenario\", \"default_entity_id\": \"select.kompressor_simulation_szenario\", \"device\": {\"identifiers\": [\"kompressor\"], \"name\": \"Kompressor\", \"manufacturer\": \"Compresio\", \"model\": \"Atemluftkompressor, dreistufig\", \"sw_version\": \"Compresio-Flows 1.1.0\", \"suggested_area\": \"Kompressorraum\"}, \"origin\": {\"name\": \"Compresio Node-RED\", \"sw_version\": \"1.1.0\"}, \"availability\": [{\"topic\": \"kompressor/availability\"}], \"availability_mode\": \"all\", \"state_topic\": \"kompressor/sim/scenario\", \"command_topic\": \"kompressor/sim/scenario/set\", \"options\": [\"normal\", \"sensorfehler\", \"kommunikationsausfall\", \"sensorknoten_offline\", \"uebertemperatur\", \"druckanomalie\", \"zeitstempelfehler\"], \"icon\": \"mdi:script-text-play-outline\", \"entity_category\": \"config\", \"retain\": false}], [\"homeassistant/select/kompressor/simulation_raumklima/config\", {\"name\": \"Simulation Raumklima\", \"unique_id\": \"kompressor_simulation_raumklima\", \"default_entity_id\": \"select.kompressor_simulation_raumklima\", \"device\": {\"identifiers\": [\"kompressor\"], \"name\": \"Kompressor\", \"manufacturer\": \"Compresio\", \"model\": \"Atemluftkompressor, dreistufig\", \"sw_version\": \"Compresio-Flows 1.1.0\", \"suggested_area\": \"Kompressorraum\"}, \"origin\": {\"name\": \"Compresio Node-RED\", \"sw_version\": \"1.1.0\"}, \"availability\": [{\"topic\": \"kompressor/availability\"}], \"availability_mode\": \"all\", \"state_topic\": \"kompressor/sim/room\", \"command_topic\": \"kompressor/sim/room/set\", \"options\": [\"normal\", \"sommer\", \"winter\", \"erwaermung\"], \"icon\": \"mdi:home-thermometer-outline\", \"entity_category\": \"config\", \"retain\": false}]];\n\nif (msg.topic === 'homeassistant/status' && String(msg.payload) !== 'online') return null;\nnode.status({ fill: 'green', shape: 'dot', text: D.length + ' Entitäten publiziert ' + new Date().toLocaleTimeString() });\nreturn [D.map(d => ({ topic: d[0], payload: JSON.stringify(d[1]), retain: true }))];",
+  "outputs": 1,
+  "timeout": 0,
+  "noerr": 0,
+  "initialize": "",
+  "finalize": "",
+  "libs": []
+ },
+ {
+  "id": "krmfb4c36306155",
+  "type": "inject",
+  "z": "krm0b8ca7c67169",
+  "name": "beim Start",
+  "x": 180,
+  "y": 120,
+  "wires": [
+   [
+    "krm5d33f93ebf14"
+   ]
+  ],
+  "props": [
+   {
+    "p": "payload"
+   },
+   {
+    "p": "topic",
+    "vt": "str"
+   }
+  ],
+  "repeat": "",
+  "crontab": "",
+  "once": true,
+  "onceDelay": "3",
+  "topic": "start",
+  "payload": "",
+  "payloadType": "date"
+ },
+ {
+  "id": "krm828352f1cfc4",
+  "type": "mqtt in",
+  "z": "krm0b8ca7c67169",
+  "name": "HA-Neustart",
+  "x": 170,
+  "y": 170,
+  "wires": [
+   [
+    "krm5d33f93ebf14"
+   ]
+  ],
+  "topic": "homeassistant/status",
+  "qos": "1",
+  "datatype": "utf8",
+  "broker": "krm2924a2d011c2",
+  "nl": false,
+  "rap": true,
+  "rh": 0,
+  "inputs": 0
+ },
+ {
+  "id": "krme70bc4efedbf",
+  "type": "tab",
+  "label": "90 SIMULATION",
+  "disabled": false,
+  "info": "SIMULATION – erzeugt synthetische Daten. Später komplett löschbar."
+ },
+ {
+  "id": "krmd8592372b33b",
+  "type": "comment",
+  "z": "krme70bc4efedbf",
+  "name": "⚠ SIMULATION – synthetische Daten",
+  "x": 170,
+  "y": 40,
+  "wires": [],
+  "info": "Dieser Tab erzeugt **synthetische** Kompressordaten (keine Messwerte!) und\npubliziert sie wie ein echter Sensorknoten auf `kompressor/raw/<sensor>` mit `\"src\": \"sim\"`.\nDie Daten durchlaufen damit exakt dieselbe Kette (MQTT → Validierung → … → InfluxDB/HA).\n\nSteuerung aus HA: Schalter „Simulation“ (`kompressor/sim/enabled/set`) und Auswahl\n„Simulationsszenario“ (`kompressor/sim/scenario/set`). Szenarien:\nnormal, sensorfehler, kommunikationsausfall, sensorknoten_offline, uebertemperatur,\ndruckanomalie, zeitstempelfehler. „Wartung fällig“: Intervall in HA klein setzen.\n\nAlle Zahlenwerte hier sind frei gewählte Simulationsparameter, KEINE Kenndaten\ndes realen Kompressors. Es werden keine Steuerbefehle erzeugt.\nEntfernen: Tab löschen + `DROP SERIES WHERE source='sim'` (siehe docs/simulation.md)."
+ },
+ {
+  "id": "krm21d2c32166e0",
+  "type": "link out",
+  "z": "krme70bc4efedbf",
+  "name": "→ MQTT",
+  "x": 660,
+  "y": 140,
+  "mode": "link",
+  "links": [
+   "krm0dc083fc23f6"
+  ]
+ },
+ {
+  "id": "krme5b16212048f",
+  "type": "link out",
+  "z": "krme70bc4efedbf",
+  "name": "→ Datenbank",
+  "x": 660,
+  "y": 180,
+  "mode": "link",
+  "links": [
+   "krmef6b1dc7bdae"
+  ]
+ },
+ {
+  "id": "krm7c621904faa4",
+  "type": "function",
+  "z": "krme70bc4efedbf",
+  "name": "Simulation steuern",
+  "x": 430,
+  "y": 160,
+  "wires": [
+   [
+    "krm21d2c32166e0"
+   ],
+   [
+    "krme5b16212048f"
+   ]
+  ],
+  "func": "const SCEN = [\"normal\", \"sensorfehler\", \"kommunikationsausfall\", \"sensorknoten_offline\", \"uebertemperatur\", \"druckanomalie\", \"zeitstempelfehler\"];\nconst ROOM = [\"normal\", \"sommer\", \"winter\", \"erwaermung\"];\n\n// Topic: <präfix>/sim/<key>[/set] – Auswertung relativ zu „sim“, unabhängig vom Präfix\nconst parts = msg.topic.split('/'); const i = parts.lastIndexOf('sim');\nconst key = parts[i + 1]; const isSet = parts[i + 2] === 'set';\nconst sim = global.get('sim') || { enabled: false, scenario: 'normal', room: 'normal' };\nif (!sim.room) sim.room = 'normal';\nconst val = String(msg.payload === undefined || msg.payload === null ? '' : msg.payload);\nconst restored = context.get('restored') || {};\nconst mq = [], lines = [];\nif (!isSet && restored[key]) return [null, null];   // eigenes Echo des Zustands ignorieren\nrestored[key] = true; context.set('restored', restored);\nif (key === 'enabled') {\n    const en = val.toUpperCase() === 'ON';\n    const changed = en !== sim.enabled;\n    sim.enabled = en;\n    if (isSet) mq.push({ topic: 'kompressor/sim/enabled', payload: en ? 'ON' : 'OFF', retain: true });\n    if (changed || isSet) {\n        // Simulation verhält sich wie ein Sensorknoten: online beim Einschalten, abgemeldet beim Ausschalten\n        mq.push({ topic: 'kompressor/raw/status', payload: en ? 'online' : '', retain: true });\n        lines.push({ rp: 'events', line: 'events,type=simulation,source=sim value=' + (en ? 1 : 0) + ',text=\"Simulation ' + (en ? 'eingeschaltet' : 'ausgeschaltet') + '\"' });\n    }\n} else if (key === 'scenario') {\n    if (!SCEN.includes(val)) return [null, null];\n    const changed = val !== sim.scenario;\n    sim.scenario = val;\n    if (isSet) mq.push({ topic: 'kompressor/sim/scenario', payload: val, retain: true });\n    if (changed && isSet) lines.push({ rp: 'events', line: 'events,type=simulation,source=sim value=2,text=\"Simulationsszenario: ' + val + '\"' });\n} else if (key === 'room') {\n    if (!ROOM.includes(val)) return [null, null];\n    const changed = val !== sim.room;\n    sim.room = val;\n    if (isSet) mq.push({ topic: 'kompressor/sim/room', payload: val, retain: true });\n    if (changed && isSet) lines.push({ rp: 'events', line: 'events,type=simulation,source=sim value=3,text=\"Simulation Raumklima: ' + val + '\"' });\n} else return [null, null];\nglobal.set('sim', sim);\nnode.status({ fill: sim.enabled ? 'blue' : 'grey', shape: 'dot', text: (sim.enabled ? 'AN' : 'AUS') + ' – ' + sim.scenario });\nreturn [mq, lines.length ? { payload: lines } : null];",
+  "outputs": 2,
+  "timeout": 0,
+  "noerr": 0,
+  "initialize": "",
+  "finalize": "",
+  "libs": []
+ },
+ {
+  "id": "krme3805eef5578",
+  "type": "mqtt in",
+  "z": "krme70bc4efedbf",
+  "name": "Simulation (aus HA)",
+  "x": 180,
+  "y": 160,
+  "wires": [
+   [
+    "krm7c621904faa4"
+   ]
+  ],
+  "topic": "kompressor/sim/#",
+  "qos": "1",
+  "datatype": "utf8",
+  "broker": "krm2924a2d011c2",
+  "nl": false,
+  "rap": true,
+  "rh": 0,
+  "inputs": 0
+ },
+ {
+  "id": "krm956a330917f3",
+  "type": "link out",
+  "z": "krme70bc4efedbf",
+  "name": "→ MQTT  ",
+  "x": 660,
+  "y": 240,
+  "mode": "link",
+  "links": [
+   "krm0dc083fc23f6"
+  ]
+ },
+ {
+  "id": "krm4744c8605649",
+  "type": "function",
+  "z": "krme70bc4efedbf",
+  "name": "Standard: AUS",
+  "x": 430,
+  "y": 240,
+  "wires": [
+   [
+    "krm956a330917f3"
+   ]
+  ],
+  "func": "// Beim allerersten Start (kein retained Zustand vorhanden): Simulation AUS, Szenario normal\nconst sim = global.get('sim');\nif (sim) {\n    // bestehende Installation: fehlenden Zustand des Raumklimas einmalig nachreichen\n    if (context.get('room_done')) return null;\n    context.set('room_done', true);\n    if (!sim.room) { sim.room = 'normal'; global.set('sim', sim); }\n    return [[{ topic: 'kompressor/sim/room', payload: sim.room, retain: true }]];\n}\nglobal.set('sim', { enabled: false, scenario: 'normal', room: 'normal' });\nreturn [[{ topic: 'kompressor/sim/enabled', payload: 'OFF', retain: true },\n         { topic: 'kompressor/sim/scenario', payload: 'normal', retain: true },\n         { topic: 'kompressor/sim/room', payload: 'normal', retain: true }]];",
+  "outputs": 1,
+  "timeout": 0,
+  "noerr": 0,
+  "initialize": "",
+  "finalize": "",
+  "libs": []
+ },
+ {
+  "id": "krmbb6764280d47",
+  "type": "inject",
+  "z": "krme70bc4efedbf",
+  "name": "nach 6 s",
+  "x": 180,
+  "y": 240,
+  "wires": [
+   [
+    "krm4744c8605649"
+   ]
+  ],
+  "props": [
+   {
+    "p": "payload"
+   },
+   {
+    "p": "topic",
+    "vt": "str"
+   }
+  ],
+  "repeat": "",
+  "crontab": "",
+  "once": true,
+  "onceDelay": "6",
+  "topic": "tick",
+  "payload": "",
+  "payloadType": "date"
+ },
+ {
+  "id": "krm800ac537baed",
+  "type": "link out",
+  "z": "krme70bc4efedbf",
+  "name": "→ MQTT (wie Sensorknoten)",
+  "x": 700,
+  "y": 320,
+  "mode": "link",
+  "links": [
+   "krm0dc083fc23f6"
+  ]
+ },
+ {
+  "id": "krme364ae430a8b",
+  "type": "function",
+  "z": "krme70bc4efedbf",
+  "name": "Simulator (synthetisch)",
+  "x": 430,
+  "y": 320,
+  "wires": [
+   [
+    "krm800ac537baed"
+   ]
+  ],
+  "func": "// SIMULATION – synthetische Werte, KEINE Kenndaten eines realen Kompressors.\nconst sim = global.get('sim') || { enabled: false, scenario: 'normal' };\nconst now = Date.now();\nlet s = context.get('s');\nif (!sim.enabled) { if (s) context.set('s', null); node.status({ fill: 'grey', shape: 'ring', text: 'Simulation aus' }); return null; }\nif (!s) s = { phase: 'idle', t: 0, p: 0, T: [18, 18, 18], C: [18, 18], TR: 18, base: 18, seq: 0, last: now, scen: null };\nif (s.TR === undefined) { s.TR = 18; s.base = 18; s.C = [s.T[0], s.T[1]]; }\nconst dt = Math.min(Math.max((now - s.last) / 1000, 0), 10); s.last = now; s.t += dt;\nconst sc = sim.scenario; const out = [];\nif (sc !== s.scen) {\n    if (sc === 'sensorknoten_offline') out.push({ topic: 'kompressor/raw/status', payload: 'offline', retain: true });\n    else if (s.scen === 'sensorknoten_offline') out.push({ topic: 'kompressor/raw/status', payload: 'online', retain: true });\n    s.scen = sc;\n}\nconst noise = a => (Math.random() * 2 - 1) * a;\n// Simulationsparameter (frei gewählt):\nconst P_END = 200, P_RATE = 0.35, TAU = 300, IDLE_S = 90, MAX_RUN_S = 900;\n// Raumklima (unabhängig von den Zylindern): Gebäude-/Außeneinfluss + Abwärme des Kompressors\nconst ROOM_BASE = { normal: 18, sommer: 30, winter: 8, erwaermung: null }[sim.room || 'normal'];\nif (ROOM_BASE === null) s.base = Math.min(35, s.base + dt * 3 / 3600);      // langsame Erwärmung: +3 °C/h bis 35 °C\nelse s.base += (ROOM_BASE - s.base) * (1 - Math.exp(-dt / 1200));          // Umstellung über ca. 20 min\n// Betriebsfreigabe: ohne Freigabe läuft der simulierte Motor nicht an bzw. stoppt sofort\nconst rel = global.get('release');\nconst released = !rel || rel.on;\nif (!released && s.phase === 'running') { s.phase = 'idle'; s.t = 0; }\nif (s.phase === 'idle' && s.t >= IDLE_S && released) { s.phase = 'running'; s.t = 0; s.p = 30 + Math.random() * 40; }\nelse if (s.phase === 'running' && ((s.p >= P_END && sc !== 'uebertemperatur') || s.t >= MAX_RUN_S)) { s.phase = 'idle'; s.t = 0; }\nconst run = s.phase === 'running';\nif (run && sc !== 'druckanomalie') s.p = Math.min(P_END, s.p + P_RATE * dt);\nif (!run) s.p = Math.max(0, s.p - 0.5 * dt);\n// Raum: erwärmt sich bei laufendem Motor (Abwärme), kühlt im Stillstand zur Basistemperatur ab\nconst ROOM_HEAT = run ? 6 : 0, TAU_ROOM = 1800;\ns.TR += ((s.base + ROOM_HEAT) - s.TR) * (1 - Math.exp(-dt / TAU_ROOM));\n// Zylinder: Übertemperatur gegenüber Raum, abhängig vom Druckniveau\nconst load = 0.6 + 0.4 * Math.min(1, s.p / P_END);\nconst rise = run ? [50 * load, 70 * load, 85 * load] : [0, 0, 0];\nif (run && sc === 'uebertemperatur') rise[2] = 240;\nfor (let i = 0; i < 3; i++) s.T[i] += ((s.TR + rise[i]) - s.T[i]) * (1 - Math.exp(-dt / TAU));\n// Kühlspiralen: Gas nach Stufe 1 bzw. 2, durch Kühlluft auf ca. 35 % der Zylinder-Übertemperatur gekühlt\nfor (let i = 0; i < 2; i++) s.C[i] += ((s.TR + 0.35 * (s.T[i] - s.TR)) - s.C[i]) * (1 - Math.exp(-dt / 120));\nconst I = run ? (s.t < 4 ? 28 : 11.5 + s.p / 100) + noise(0.3) : Math.abs(noise(0.05));\nconst U = 400 + noise(3);\ncontext.set('s', s);\nnode.status({ fill: 'blue', shape: 'dot', text: 'SIM ' + sc + '/' + (sim.room || 'normal') + ': ' + (run ? 'läuft' : 'steht') + ', ' + s.p.toFixed(0) + ' bar, T3 ' + s.T[2].toFixed(0) + ' °C, Raum ' + s.TR.toFixed(1) + ' °C' });\nif (sc === 'kommunikationsausfall' || sc === 'sensorknoten_offline') return [out];\ns.seq++;\nconst vals = { pressure_final: s.p + noise(0.3), temp_stage1: s.T[0] + noise(0.2), temp_coil12: s.C[0] + noise(0.2), temp_stage2: s.T[1] + noise(0.2),\n               temp_coil23: s.C[1] + noise(0.2), temp_stage3: s.T[2] + noise(0.2), temp_room: s.TR + noise(0.05), motor_current: I, supply_voltage: U };\nfor (const [k, v] of Object.entries(vals)) {\n    let pv = Math.round(v * 100) / 100, ts = now;\n    if (sc === 'sensorfehler' && k === 'temp_stage2') pv = (s.seq % 2) ? null : 999.9;\n    if (sc === 'zeitstempelfehler' && k === 'pressure_final') ts = now + 3600 * 1000;\n    const m = { topic: 'kompressor/raw/' + k, payload: JSON.stringify({ v: pv, ts: ts, src: 'sim', seq: s.seq }), retain: false };\n    out.push(m);\n    if (sc === 'zeitstempelfehler' && k === 'temp_stage1') out.push(Object.assign({}, m));   // Duplikat\n}\nreturn [out];",
+  "outputs": 1,
+  "timeout": 0,
+  "noerr": 0,
+  "initialize": "",
+  "finalize": "",
+  "libs": []
+ },
+ {
+  "id": "krm98b960d0d8c4",
+  "type": "inject",
+  "z": "krme70bc4efedbf",
+  "name": "alle 2 s",
+  "x": 180,
+  "y": 320,
+  "wires": [
+   [
+    "krme364ae430a8b"
+   ]
+  ],
+  "props": [
+   {
+    "p": "payload"
+   },
+   {
+    "p": "topic",
+    "vt": "str"
+   }
+  ],
+  "repeat": "2",
+  "crontab": "",
+  "once": true,
+  "onceDelay": "7",
+  "topic": "tick",
+  "payload": "",
+  "payloadType": "date"
+ }
+]

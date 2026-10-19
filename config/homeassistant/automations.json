@@ -1,0 +1,149 @@
+{
+ "kompressor_meldungen": {
+  "alias": "Kompressor: Meldungen anzeigen",
+  "description": "Zeigt aktive Meldungen (Warnungen/Störungen aus Node-RED) als HA-Benachrichtigung an und entfernt sie, sobald keine Meldung mehr aktiv ist. Weitere Kanäle (Mobile App, E-Mail) können hier später ergänzt werden. Keine Eingriffe in den Kompressor.",
+  "mode": "queued",
+  "max": 10,
+  "triggers": [
+   {
+    "trigger": "state",
+    "entity_id": "sensor.kompressor_meldungen",
+    "attribute": "text",
+    "id": "text"
+   },
+   {
+    "trigger": "state",
+    "entity_id": "sensor.kompressor_meldungen",
+    "id": "anzahl"
+   }
+  ],
+  "conditions": [
+   {
+    "condition": "not",
+    "conditions": [
+     {
+      "condition": "state",
+      "entity_id": "sensor.kompressor_meldungen",
+      "state": [
+       "unavailable",
+       "unknown"
+      ]
+     }
+    ]
+   }
+  ],
+  "actions": [
+   {
+    "if": [
+     {
+      "condition": "numeric_state",
+      "entity_id": "sensor.kompressor_meldungen",
+      "below": 1
+     }
+    ],
+    "then": [
+     {
+      "action": "persistent_notification.dismiss",
+      "data": {
+       "notification_id": "kompressor_meldungen"
+      }
+     }
+    ],
+    "else": [
+     {
+      "action": "persistent_notification.create",
+      "data": {
+       "notification_id": "kompressor_meldungen",
+       "title": "Kompressor: {{ states('sensor.kompressor_meldungen') }} aktive Meldung(en)",
+       "message": "{{ state_attr('sensor.kompressor_meldungen', 'text') }}\n\nDatenquelle: {{ states('sensor.kompressor_quelle') }} – Schwellwerte sind TEST-Werte."
+      }
+     }
+    ]
+   }
+  ]
+ },
+ "kompressor_plattform": {
+  "alias": "Kompressor: Plattform-Ausfall melden",
+  "description": "Meldet, wenn eine Komponente der Datenerfassung (MQTT, Node-RED, InfluxDB) länger als 2 Minuten nicht läuft oder die Verarbeitung offline ist (Last Will).",
+  "mode": "parallel",
+  "max": 10,
+  "triggers": [
+   {
+    "trigger": "state",
+    "entity_id": [
+     "binary_sensor.mosquitto_broker_aktiv",
+     "binary_sensor.node_red_aktiv",
+     "binary_sensor.influxdb_v1_aktiv"
+    ],
+    "to": "off",
+    "for": "00:02:00",
+    "id": "app"
+   },
+   {
+    "trigger": "state",
+    "entity_id": "sensor.kompressor_status",
+    "to": "unavailable",
+    "for": "00:02:00",
+    "id": "nodered"
+   },
+   {
+    "trigger": "state",
+    "entity_id": "sensor.kompressor_influxdb",
+    "to": [
+     "schreibfehler",
+     "nicht_erreichbar"
+    ],
+    "for": "00:02:00",
+    "id": "influx"
+   }
+  ],
+  "actions": [
+   {
+    "action": "persistent_notification.create",
+    "data": {
+     "notification_id": "kompressor_plattform_{{ trigger.id }}",
+     "title": "Kompressor: Datenerfassung gestört",
+     "message": "{{ trigger.to_state.name }} ist seit 2 Minuten „{{ trigger.to_state.state }}“."
+    }
+   }
+  ]
+ },
+ "kompressor_plattform_ok": {
+  "alias": "Kompressor: Plattform wieder in Ordnung",
+  "description": "Entfernt die Ausfallmeldung, sobald die Komponente wieder läuft.",
+  "mode": "parallel",
+  "max": 10,
+  "triggers": [
+   {
+    "trigger": "state",
+    "entity_id": [
+     "binary_sensor.mosquitto_broker_aktiv",
+     "binary_sensor.node_red_aktiv",
+     "binary_sensor.influxdb_v1_aktiv"
+    ],
+    "to": "on",
+    "id": "app"
+   },
+   {
+    "trigger": "state",
+    "entity_id": "sensor.kompressor_status",
+    "from": "unavailable",
+    "id": "nodered"
+   },
+   {
+    "trigger": "state",
+    "entity_id": "sensor.kompressor_influxdb",
+    "to": "ok",
+    "id": "influx"
+   }
+  ],
+  "actions": [
+   {
+    "action": "persistent_notification.dismiss",
+    "data": {
+     "notification_id": "kompressor_plattform_{{ trigger.id }}"
+    }
+   }
+  ]
+ }
+}

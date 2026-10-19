@@ -1,0 +1,15 @@
+{
+ "name": "InfluxDB Compresio",
+ "uid": "kompressor-influx",
+ "type": "influxdb",
+ "access": "proxy",
+ "url": "http://a0d7b954-influxdb:8086",
+ "user": "kompressor-grafana",
+ "isDefault": true,
+ "jsonData": {
+  "dbName": "kompressor",
+  "httpMode": "GET",
+  "version": "InfluxQL",
+  "timeInterval": "5s"
+ }
+}

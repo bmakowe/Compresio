@@ -1,0 +1,2904 @@
+{
+ "uid": "kompressorraum",
+ "title": "Compresio – Kompressorraum",
+ "tags": [
+  "kompressor"
+ ],
+ "timezone": "browser",
+ "refresh": "10s",
+ "time": {
+  "from": "now-3h",
+  "to": "now"
+ },
+ "schemaVersion": 39,
+ "editable": true,
+ "graphTooltip": 1,
+ "liveNow": false,
+ "description": "Überwachung des Atemluftkompressors. Reine Diagnose – keine Steuerung. Schwellwerte sind TEST-Werte. Quelle 'sim' = synthetische Simulationsdaten.",
+ "templating": {
+  "list": [
+   {
+    "name": "source",
+    "label": "Datenquelle",
+    "type": "custom",
+    "query": "real,sim",
+    "current": {
+     "text": "sim",
+     "value": "sim",
+     "selected": true
+    },
+    "options": [
+     {
+      "text": "real",
+      "value": "real",
+      "selected": false
+     },
+     {
+      "text": "sim",
+      "value": "sim",
+      "selected": true
+     }
+    ],
+    "description": "real = Messwerte der Sensorik, sim = SIMULATION (synthetisch)"
+   }
+  ]
+ },
+ "annotations": {
+  "list": [
+   {
+    "builtIn": 1,
+    "datasource": {
+     "type": "grafana",
+     "uid": "-- Grafana --"
+    },
+    "enable": true,
+    "hide": true,
+    "iconColor": "rgba(0, 211, 255, 1)",
+    "name": "Annotations & Alerts",
+    "type": "dashboard"
+   },
+   {
+    "name": "Meldungen",
+    "datasource": {
+     "type": "influxdb",
+     "uid": "kompressor-influx"
+    },
+    "enable": true,
+    "iconColor": "red",
+    "query": "SELECT \"text\" FROM \"events\".\"events\" WHERE \"type\" = 'alert' AND $timeFilter",
+    "textColumn": "text"
+   },
+   {
+    "name": "Wartung",
+    "datasource": {
+     "type": "influxdb",
+     "uid": "kompressor-influx"
+    },
+    "enable": true,
+    "iconColor": "blue",
+    "query": "SELECT \"text\" FROM \"events\".\"events\" WHERE \"type\" =~ /^(maintenance|filter_change)$/ AND $timeFilter",
+    "textColumn": "text"
+   }
+  ]
+ },
+ "links": [],
+ "panels": [
+  {
+   "type": "row",
+   "title": "Übersicht",
+   "id": 1,
+   "collapsed": false,
+   "gridPos": {
+    "h": 1,
+    "w": 24,
+    "x": 0,
+    "y": 0
+   },
+   "panels": []
+  },
+  {
+   "type": "stat",
+   "title": "Gesamtstatus",
+   "id": 2,
+   "datasource": {
+    "type": "influxdb",
+    "uid": "kompressor-influx"
+   },
+   "description": "Aus Node-RED (Alarmierung). Ohne Daten in den letzten 2 Minuten: Keine Daten.",
+   "gridPos": {
+    "h": 5,
+    "w": 5,
+    "x": 0,
+    "y": 1
+   },
+   "targets": [
+    {
+     "refId": "A",
+     "datasource": {
+      "type": "influxdb",
+      "uid": "kompressor-influx"
+     },
+     "query": "SELECT last(\"status_code\") FROM \"raw\".\"state\" WHERE $timeFilter AND \"status_code\" >= 0",
+     "rawQuery": true,
+     "resultFormat": "time_series"
+    }
+   ],
+   "fieldConfig": {
+    "defaults": {
+     "mappings": [
+      {
+       "type": "value",
+       "options": {
+        "0": {
+         "text": "NORMAL",
+         "color": "green",
+         "index": 0
+        },
+        "1": {
+         "text": "WARNUNG",
+         "color": "orange",
+         "index": 1
+        },
+        "2": {
+         "text": "STÖRUNG",
+         "color": "red",
+         "index": 2
+        },
+        "3": {
+         "text": "KEINE DATEN",
+         "color": "#8e8e8e",
+         "index": 3
+        }
+       }
+      }
+     ],
+     "noValue": "Keine Daten",
+     "color": {
+      "mode": "thresholds"
+     },
+     "thresholds": {
+      "mode": "absolute",
+      "steps": [
+       {
+        "color": "green",
+        "value": null
+       }
+      ]
+     }
+    },
+    "overrides": []
+   },
+   "options": {
+    "reduceOptions": {
+     "calcs": [
+      "lastNotNull"
+     ],
+     "fields": "",
+     "values": false
+    },
+    "colorMode": "background",
+    "graphMode": "none",
+    "textMode": "value",
+    "justifyMode": "center",
+    "orientation": "auto",
+    "showPercentChange": false,
+    "wideLayout": true
+   },
+   "timeFrom": "2m",
+   "hideTimeOverride": true
+  },
+  {
+   "type": "stat",
+   "title": "Betriebszustand",
+   "id": 3,
+   "datasource": {
+    "type": "influxdb",
+    "uid": "kompressor-influx"
+   },
+   "description": "",
+   "gridPos": {
+    "h": 5,
+    "w": 4,
+    "x": 5,
+    "y": 1
+   },
+   "targets": [
+    {
+     "refId": "A",
+     "datasource": {
+      "type": "influxdb",
+      "uid": "kompressor-influx"
+     },
+     "query": "SELECT last(\"running\") FROM \"raw\".\"state\" WHERE $timeFilter AND \"source\" =~ /^$source$/ AND \"running\" >= 0",
+     "rawQuery": true,
+     "resultFormat": "time_series"
+    }
+   ],
+   "fieldConfig": {
+    "defaults": {
+     "mappings": [
+      {
+       "type": "value",
+       "options": {
+        "0": {
+         "text": "STEHT",
+         "color": "#5a6b7d",
+         "index": 0
+        },
+        "1": {
+         "text": "LÄUFT",
+         "color": "green",
+         "index": 1
+        }
+       }
+      }
+     ],
+     "noValue": "Keine Daten",
+     "color": {
+      "mode": "thresholds"
+     },
+     "thresholds": {
+      "mode": "absolute",
+      "steps": [
+       {
+        "color": "#5a6b7d",
+        "value": null
+       }
+      ]
+     }
+    },
+    "overrides": []
+   },
+   "options": {
+    "reduceOptions": {
+     "calcs": [
+      "lastNotNull"
+     ],
+     "fields": "",
+     "values": false
+    },
+    "colorMode": "background",
+    "graphMode": "none",
+    "textMode": "value",
+    "justifyMode": "center",
+    "orientation": "auto",
+    "showPercentChange": false,
+    "wideLayout": true
+   },
+   "timeFrom": "1m",
+   "hideTimeOverride": true
+  },
+  {
+   "type": "stat",
+   "title": "Aktuelle Laufzeit",
+   "id": 4,
+   "datasource": {
+    "type": "influxdb",
+    "uid": "kompressor-influx"
+   },
+   "description": "",
+   "gridPos": {
+    "h": 5,
+    "w": 3,
+    "x": 9,
+    "y": 1
+   },
+   "targets": [
+    {
+     "refId": "A",
+     "datasource": {
+      "type": "influxdb",
+      "uid": "kompressor-influx"
+     },
+     "query": "SELECT last(\"cycle_s\") FROM \"raw\".\"counter\" WHERE $timeFilter AND \"source\" =~ /^$source$/",
+     "rawQuery": true,
+     "resultFormat": "time_series"
+    }
+   ],
+   "fieldConfig": {
+    "defaults": {
+     "unit": "s",
+     "noValue": "Keine Daten",
+     "color": {
+      "mode": "fixed",
+      "fixedColor": "blue"
+     }
+    },
+    "overrides": []
+   },
+   "options": {
+    "reduceOptions": {
+     "calcs": [
+      "lastNotNull"
+     ],
+     "fields": "",
+     "values": false
+    },
+    "colorMode": "value",
+    "graphMode": "none",
+    "textMode": "value",
+    "justifyMode": "center",
+    "orientation": "auto",
+    "showPercentChange": false,
+    "wideLayout": true
+   },
+   "timeFrom": "1m",
+   "hideTimeOverride": true
+  },
+  {
+   "type": "stat",
+   "title": "Gesamtbetriebsstunden",
+   "id": 5,
+   "datasource": {
+    "type": "influxdb",
+    "uid": "kompressor-influx"
+   },
+   "description": "",
+   "gridPos": {
+    "h": 5,
+    "w": 4,
+    "x": 12,
+    "y": 1
+   },
+   "targets": [
+    {
+     "refId": "A",
+     "datasource": {
+      "type": "influxdb",
+      "uid": "kompressor-influx"
+     },
+     "query": "SELECT last(\"total_s\") / 3600 FROM \"raw\".\"counter\" WHERE $timeFilter AND \"source\" =~ /^$source$/",
+     "rawQuery": true,
+     "resultFormat": "time_series"
+    }
+   ],
+   "fieldConfig": {
+    "defaults": {
+     "unit": "h",
+     "decimals": 2,
+     "noValue": "Keine Daten",
+     "color": {
+      "mode": "fixed",
+      "fixedColor": "text"
+     }
+    },
+    "overrides": []
+   },
+   "options": {
+    "reduceOptions": {
+     "calcs": [
+      "lastNotNull"
+     ],
+     "fields": "",
+     "values": false
+    },
+    "colorMode": "value",
+    "graphMode": "none",
+    "textMode": "value",
+    "justifyMode": "center",
+    "orientation": "auto",
+    "showPercentChange": false,
+    "wideLayout": true
+   },
+   "timeFrom": "1h",
+   "hideTimeOverride": true
+  },
+  {
+   "type": "stat",
+   "title": "Aktive Meldungen",
+   "id": 6,
+   "datasource": {
+    "type": "influxdb",
+    "uid": "kompressor-influx"
+   },
+   "description": "",
+   "gridPos": {
+    "h": 5,
+    "w": 3,
+    "x": 16,
+    "y": 1
+   },
+   "targets": [
+    {
+     "refId": "A",
+     "datasource": {
+      "type": "influxdb",
+      "uid": "kompressor-influx"
+     },
+     "query": "SELECT last(\"alerts\") FROM \"raw\".\"state\" WHERE $timeFilter AND \"alerts\" >= 0",
+     "rawQuery": true,
+     "resultFormat": "time_series"
+    }
+   ],
+   "fieldConfig": {
+    "defaults": {
+     "noValue": "Keine Daten",
+     "color": {
+      "mode": "thresholds"
+     },
+     "thresholds": {
+      "mode": "absolute",
+      "steps": [
+       {
+        "color": "green",
+        "value": null
+       },
+       {
+        "value": 1,
+        "color": "orange"
+       }
+      ]
+     }
+    },
+    "overrides": []
+   },
+   "options": {
+    "reduceOptions": {
+     "calcs": [
+      "lastNotNull"
+     ],
+     "fields": "",
+     "values": false
+    },
+    "colorMode": "background",
+    "graphMode": "none",
+    "textMode": "value",
+    "justifyMode": "center",
+    "orientation": "auto",
+    "showPercentChange": false,
+    "wideLayout": true
+   },
+   "timeFrom": "2m",
+   "hideTimeOverride": true
+  },
+  {
+   "type": "stat",
+   "title": "Letzte Aktualisierung",
+   "id": 7,
+   "datasource": {
+    "type": "influxdb",
+    "uid": "kompressor-influx"
+   },
+   "description": "",
+   "gridPos": {
+    "h": 5,
+    "w": 5,
+    "x": 19,
+    "y": 1
+   },
+   "targets": [
+    {
+     "refId": "A",
+     "datasource": {
+      "type": "influxdb",
+      "uid": "kompressor-influx"
+     },
+     "query": "SELECT last(\"value\") FROM \"raw\".\"sensor\" WHERE $timeFilter AND \"source\" =~ /^$source$/",
+     "rawQuery": true,
+     "resultFormat": "table"
+    }
+   ],
+   "fieldConfig": {
+    "defaults": {
+     "unit": "dateTimeFromNow",
+     "noValue": "Keine Daten",
+     "color": {
+      "mode": "fixed",
+      "fixedColor": "text"
+     }
+    },
+    "overrides": []
+   },
+   "options": {
+    "reduceOptions": {
+     "calcs": [
+      "lastNotNull"
+     ],
+     "fields": "/^Time$/",
+     "values": false
+    },
+    "colorMode": "value",
+    "graphMode": "none",
+    "textMode": "value",
+    "justifyMode": "center",
+    "orientation": "auto",
+    "showPercentChange": false,
+    "wideLayout": true
+   },
+   "timeFrom": "24h",
+   "hideTimeOverride": true
+  },
+  {
+   "type": "row",
+   "title": "Druck",
+   "id": 8,
+   "collapsed": false,
+   "gridPos": {
+    "h": 1,
+    "w": 24,
+    "x": 0,
+    "y": 6
+   },
+   "panels": []
+  },
+  {
+   "type": "gauge",
+   "title": "Enddruck aktuell",
+   "id": 9,
+   "datasource": {
+    "type": "influxdb",
+    "uid": "kompressor-influx"
+   },
+   "description": "Skala und Farbschwellen sind Darstellungs-/TEST-Werte. Schwellwerte sind TEST-Werte, keine Herstellerangaben.",
+   "gridPos": {
+    "h": 8,
+    "w": 5,
+    "x": 0,
+    "y": 7
+   },
+   "targets": [
+    {
+     "refId": "A",
+     "datasource": {
+      "type": "influxdb",
+      "uid": "kompressor-influx"
+     },
+     "query": "SELECT last(\"value\") FROM \"raw\".\"sensor\" WHERE \"sensor\" = 'pressure_final' AND \"source\" =~ /^$source$/ AND $timeFilter",
+     "rawQuery": true,
+     "resultFormat": "time_series"
+    }
+   ],
+   "fieldConfig": {
+    "defaults": {
+     "unit": "pressurebar",
+     "decimals": 1,
+     "min": 0,
+     "max": 300,
+     "noValue": "Keine Daten",
+     "thresholds": {
+      "mode": "absolute",
+      "steps": [
+       {
+        "color": "blue",
+        "value": null
+       },
+       {
+        "value": 220,
+        "color": "orange"
+       },
+       {
+        "value": 240,
+        "color": "red"
+       }
+      ]
+     },
+     "color": {
+      "mode": "thresholds"
+     }
+    },
+    "overrides": []
+   },
+   "options": {
+    "reduceOptions": {
+     "calcs": [
+      "lastNotNull"
+     ],
+     "fields": "",
+     "values": false
+    },
+    "showThresholdMarkers": true,
+    "showThresholdLabels": false
+   },
+   "timeFrom": "1m",
+   "hideTimeOverride": true
+  },
+  {
+   "type": "timeseries",
+   "title": "Druckverlauf",
+   "id": 10,
+   "datasource": {
+    "type": "influxdb",
+    "uid": "kompressor-influx"
+   },
+   "description": "",
+   "gridPos": {
+    "h": 8,
+    "w": 11,
+    "x": 5,
+    "y": 7
+   },
+   "targets": [
+    {
+     "refId": "A",
+     "datasource": {
+      "type": "influxdb",
+      "uid": "kompressor-influx"
+     },
+     "query": "SELECT mean(\"value\") FROM \"raw\".\"sensor\" WHERE \"sensor\" = 'pressure_final' AND \"source\" =~ /^$source$/ AND $timeFilter GROUP BY time($__interval) fill(null)",
+     "rawQuery": true,
+     "resultFormat": "time_series",
+     "alias": "Enddruck"
+    }
+   ],
+   "fieldConfig": {
+    "defaults": {
+     "unit": "pressurebar",
+     "custom": {
+      "drawStyle": "line",
+      "lineWidth": 2,
+      "fillOpacity": 10,
+      "spanNulls": false,
+      "showPoints": "never",
+      "lineInterpolation": "smooth",
+      "stacking": {
+       "mode": "none"
+      },
+      "axisBorderShow": false
+     },
+     "decimals": 1
+    },
+    "overrides": []
+   },
+   "options": {
+    "legend": {
+     "displayMode": "list",
+     "placement": "bottom",
+     "showLegend": true
+    },
+    "tooltip": {
+     "mode": "multi",
+     "sort": "none"
+    }
+   }
+  },
+  {
+   "type": "timeseries",
+   "title": "Druckanstieg",
+   "id": 11,
+   "datasource": {
+    "type": "influxdb",
+    "uid": "kompressor-influx"
+   },
+   "description": "Änderungsrate über 60 s (Node-RED).",
+   "gridPos": {
+    "h": 8,
+    "w": 8,
+    "x": 16,
+    "y": 7
+   },
+   "targets": [
+    {
+     "refId": "A",
+     "datasource": {
+      "type": "influxdb",
+      "uid": "kompressor-influx"
+     },
+     "query": "SELECT mean(\"rate\") FROM \"raw\".\"sensor\" WHERE \"sensor\" = 'pressure_final' AND \"source\" =~ /^$source$/ AND $timeFilter GROUP BY time($__interval) fill(null)",
+     "rawQuery": true,
+     "resultFormat": "time_series",
+     "alias": "bar/min"
+    }
+   ],
+   "fieldConfig": {
+    "defaults": {
+     "unit": "bar/min",
+     "custom": {
+      "drawStyle": "line",
+      "lineWidth": 2,
+      "fillOpacity": 0,
+      "spanNulls": false,
+      "showPoints": "never",
+      "lineInterpolation": "smooth",
+      "stacking": {
+       "mode": "none"
+      },
+      "axisBorderShow": false
+     },
+     "decimals": 1
+    },
+    "overrides": []
+   },
+   "options": {
+    "legend": {
+     "displayMode": "list",
+     "placement": "bottom",
+     "showLegend": true
+    },
+    "tooltip": {
+     "mode": "multi",
+     "sort": "none"
+    }
+   }
+  },
+  {
+   "type": "timeseries",
+   "title": "Historische Druckkurven (Minutenaggregate, 30 Tage)",
+   "id": 12,
+   "datasource": {
+    "type": "influxdb",
+    "uid": "kompressor-influx"
+   },
+   "description": "Aus der Retention Policy agg_1m (1 Jahr).",
+   "gridPos": {
+    "h": 7,
+    "w": 24,
+    "x": 0,
+    "y": 15
+   },
+   "targets": [
+    {
+     "refId": "A",
+     "datasource": {
+      "type": "influxdb",
+      "uid": "kompressor-influx"
+     },
+     "query": "SELECT max(\"max_value\") FROM \"agg_1m\".\"sensor\" WHERE \"sensor\" = 'pressure_final' AND \"source\" =~ /^$source$/ AND $timeFilter GROUP BY time($__interval) fill(null)",
+     "rawQuery": true,
+     "resultFormat": "time_series",
+     "alias": "max"
+    },
+    {
+     "refId": "B",
+     "datasource": {
+      "type": "influxdb",
+      "uid": "kompressor-influx"
+     },
+     "query": "SELECT mean(\"mean_value\") FROM \"agg_1m\".\"sensor\" WHERE \"sensor\" = 'pressure_final' AND \"source\" =~ /^$source$/ AND $timeFilter GROUP BY time($__interval) fill(null)",
+     "rawQuery": true,
+     "resultFormat": "time_series",
+     "alias": "Mittel"
+    }
+   ],
+   "fieldConfig": {
+    "defaults": {
+     "unit": "pressurebar",
+     "custom": {
+      "drawStyle": "line",
+      "lineWidth": 2,
+      "fillOpacity": 5,
+      "spanNulls": false,
+      "showPoints": "never",
+      "lineInterpolation": "smooth",
+      "stacking": {
+       "mode": "none"
+      },
+      "axisBorderShow": false
+     },
+     "decimals": 1
+    },
+    "overrides": []
+   },
+   "options": {
+    "legend": {
+     "displayMode": "list",
+     "placement": "bottom",
+     "showLegend": true
+    },
+    "tooltip": {
+     "mode": "multi",
+     "sort": "none"
+    }
+   },
+   "timeFrom": "30d",
+   "hideTimeOverride": true
+  },
+  {
+   "type": "row",
+   "title": "Temperaturen",
+   "id": 13,
+   "collapsed": false,
+   "gridPos": {
+    "h": 1,
+    "w": 24,
+    "x": 0,
+    "y": 22
+   },
+   "panels": []
+  },
+  {
+   "type": "bargauge",
+   "title": "Temperaturen aktuell (T1 → T12 → T2 → T23 → T3, Raum)",
+   "id": 14,
+   "datasource": {
+    "type": "influxdb",
+    "uid": "kompressor-influx"
+   },
+   "description": "Schwellwerte sind TEST-Werte, keine Herstellerangaben.",
+   "gridPos": {
+    "h": 8,
+    "w": 6,
+    "x": 0,
+    "y": 23
+   },
+   "targets": [
+    {
+     "refId": "A",
+     "datasource": {
+      "type": "influxdb",
+      "uid": "kompressor-influx"
+     },
+     "query": "SELECT last(\"value\") FROM \"raw\".\"sensor\" WHERE \"sensor\" = 'temp_stage1' AND \"source\" =~ /^$source$/ AND $timeFilter",
+     "rawQuery": true,
+     "resultFormat": "time_series",
+     "alias": "T1 Zylinder 1"
+    },
+    {
+     "refId": "B",
+     "datasource": {
+      "type": "influxdb",
+      "uid": "kompressor-influx"
+     },
+     "query": "SELECT last(\"value\") FROM \"raw\".\"sensor\" WHERE \"sensor\" = 'temp_coil12' AND \"source\" =~ /^$source$/ AND $timeFilter",
+     "rawQuery": true,
+     "resultFormat": "time_series",
+     "alias": "T12 Kühlspirale 1–2"
+    },
+    {
+     "refId": "C",
+     "datasource": {
+      "type": "influxdb",
+      "uid": "kompressor-influx"
+     },
+     "query": "SELECT last(\"value\") FROM \"raw\".\"sensor\" WHERE \"sensor\" = 'temp_stage2' AND \"source\" =~ /^$source$/ AND $timeFilter",
+     "rawQuery": true,
+     "resultFormat": "time_series",
+     "alias": "T2 Zylinder 2"
+    },
+    {
+     "refId": "D",
+     "datasource": {
+      "type": "influxdb",
+      "uid": "kompressor-influx"
+     },
+     "query": "SELECT last(\"value\") FROM \"raw\".\"sensor\" WHERE \"sensor\" = 'temp_coil23' AND \"source\" =~ /^$source$/ AND $timeFilter",
+     "rawQuery": true,
+     "resultFormat": "time_series",
+     "alias": "T23 Kühlspirale 2–3"
+    },
+    {
+     "refId": "E",
+     "datasource": {
+      "type": "influxdb",
+      "uid": "kompressor-influx"
+     },
+     "query": "SELECT last(\"value\") FROM \"raw\".\"sensor\" WHERE \"sensor\" = 'temp_stage3' AND \"source\" =~ /^$source$/ AND $timeFilter",
+     "rawQuery": true,
+     "resultFormat": "time_series",
+     "alias": "T3 Zylinder 3"
+    },
+    {
+     "refId": "F",
+     "datasource": {
+      "type": "influxdb",
+      "uid": "kompressor-influx"
+     },
+     "query": "SELECT last(\"value\") FROM \"raw\".\"sensor\" WHERE \"sensor\" = 'temp_room' AND \"source\" =~ /^$source$/ AND $timeFilter",
+     "rawQuery": true,
+     "resultFormat": "time_series",
+     "alias": "TR Raum"
+    }
+   ],
+   "fieldConfig": {
+    "defaults": {
+     "unit": "celsius",
+     "decimals": 1,
+     "min": 0,
+     "max": 200,
+     "noValue": "Keine Daten",
+     "thresholds": {
+      "mode": "absolute",
+      "steps": [
+       {
+        "color": "green",
+        "value": null
+       },
+       {
+        "value": 150,
+        "color": "orange"
+       },
+       {
+        "value": 180,
+        "color": "red"
+       }
+      ]
+     },
+     "color": {
+      "mode": "thresholds"
+     }
+    },
+    "overrides": []
+   },
+   "options": {
+    "reduceOptions": {
+     "calcs": [
+      "lastNotNull"
+     ],
+     "fields": "",
+     "values": false
+    },
+    "orientation": "horizontal",
+    "displayMode": "gradient",
+    "showUnfilled": true,
+    "valueMode": "color",
+    "namePlacement": "auto",
+    "sizing": "auto"
+   },
+   "timeFrom": "1m",
+   "hideTimeOverride": true
+  },
+  {
+   "type": "timeseries",
+   "title": "Temperaturverläufe (Zylinder durchgezogen, Kühlspiralen gestrichelt, Raum gepunktet)",
+   "id": 15,
+   "datasource": {
+    "type": "influxdb",
+    "uid": "kompressor-influx"
+   },
+   "description": "",
+   "gridPos": {
+    "h": 8,
+    "w": 12,
+    "x": 6,
+    "y": 23
+   },
+   "targets": [
+    {
+     "refId": "A",
+     "datasource": {
+      "type": "influxdb",
+      "uid": "kompressor-influx"
+     },
+     "query": "SELECT mean(\"value\") FROM \"raw\".\"sensor\" WHERE \"sensor\" = 'temp_stage1' AND \"source\" =~ /^$source$/ AND $timeFilter GROUP BY time($__interval) fill(null)",
+     "rawQuery": true,
+     "resultFormat": "time_series",
+     "alias": "T1 Zylinder 1"
+    },
+    {
+     "refId": "B",
+     "datasource": {
+      "type": "influxdb",
+      "uid": "kompressor-influx"
+     },
+     "query": "SELECT mean(\"value\") FROM \"raw\".\"sensor\" WHERE \"sensor\" = 'temp_coil12' AND \"source\" =~ /^$source$/ AND $timeFilter GROUP BY time($__interval) fill(null)",
+     "rawQuery": true,
+     "resultFormat": "time_series",
+     "alias": "T12 Kühlspirale 1–2"
+    },
+    {
+     "refId": "C",
+     "datasource": {
+      "type": "influxdb",
+      "uid": "kompressor-influx"
+     },
+     "query": "SELECT mean(\"value\") FROM \"raw\".\"sensor\" WHERE \"sensor\" = 'temp_stage2' AND \"source\" =~ /^$source$/ AND $timeFilter GROUP BY time($__interval) fill(null)",
+     "rawQuery": true,
+     "resultFormat": "time_series",
+     "alias": "T2 Zylinder 2"
+    },
+    {
+     "refId": "D",
+     "datasource": {
+      "type": "influxdb",
+      "uid": "kompressor-influx"
+     },
+     "query": "SELECT mean(\"value\") FROM \"raw\".\"sensor\" WHERE \"sensor\" = 'temp_coil23' AND \"source\" =~ /^$source$/ AND $timeFilter GROUP BY time($__interval) fill(null)",
+     "rawQuery": true,
+     "resultFormat": "time_series",
+     "alias": "T23 Kühlspirale 2–3"
+    },
+    {
+     "refId": "E",
+     "datasource": {
+      "type": "influxdb",
+      "uid": "kompressor-influx"
+     },
+     "query": "SELECT mean(\"value\") FROM \"raw\".\"sensor\" WHERE \"sensor\" = 'temp_stage3' AND \"source\" =~ /^$source$/ AND $timeFilter GROUP BY time($__interval) fill(null)",
+     "rawQuery": true,
+     "resultFormat": "time_series",
+     "alias": "T3 Zylinder 3"
+    },
+    {
+     "refId": "F",
+     "datasource": {
+      "type": "influxdb",
+      "uid": "kompressor-influx"
+     },
+     "query": "SELECT mean(\"value\") FROM \"raw\".\"sensor\" WHERE \"sensor\" = 'temp_room' AND \"source\" =~ /^$source$/ AND $timeFilter GROUP BY time($__interval) fill(null)",
+     "rawQuery": true,
+     "resultFormat": "time_series",
+     "alias": "TR Raum"
+    }
+   ],
+   "fieldConfig": {
+    "defaults": {
+     "unit": "celsius",
+     "custom": {
+      "drawStyle": "line",
+      "lineWidth": 2,
+      "fillOpacity": 0,
+      "spanNulls": false,
+      "showPoints": "never",
+      "lineInterpolation": "smooth",
+      "stacking": {
+       "mode": "none"
+      },
+      "axisBorderShow": false
+     },
+     "decimals": 1
+    },
+    "overrides": [
+     {
+      "matcher": {
+       "id": "byName",
+       "options": "T1 Zylinder 1"
+      },
+      "properties": [
+       {
+        "id": "color",
+        "value": {
+         "mode": "fixed",
+         "fixedColor": "#2F8CF0"
+        }
+       }
+      ]
+     },
+     {
+      "matcher": {
+       "id": "byName",
+       "options": "T12 Kühlspirale 1–2"
+      },
+      "properties": [
+       {
+        "id": "color",
+        "value": {
+         "mode": "fixed",
+         "fixedColor": "#8ED9D3"
+        }
+       },
+       {
+        "id": "custom.lineStyle",
+        "value": {
+         "fill": "dash",
+         "dash": [
+          6,
+          4
+         ]
+        }
+       }
+      ]
+     },
+     {
+      "matcher": {
+       "id": "byName",
+       "options": "T2 Zylinder 2"
+      },
+      "properties": [
+       {
+        "id": "color",
+        "value": {
+         "mode": "fixed",
+         "fixedColor": "#F2B544"
+        }
+       }
+      ]
+     },
+     {
+      "matcher": {
+       "id": "byName",
+       "options": "T23 Kühlspirale 2–3"
+      },
+      "properties": [
+       {
+        "id": "color",
+        "value": {
+         "mode": "fixed",
+         "fixedColor": "#FF8A65"
+        }
+       },
+       {
+        "id": "custom.lineStyle",
+        "value": {
+         "fill": "dash",
+         "dash": [
+          6,
+          4
+         ]
+        }
+       }
+      ]
+     },
+     {
+      "matcher": {
+       "id": "byName",
+       "options": "T3 Zylinder 3"
+      },
+      "properties": [
+       {
+        "id": "color",
+        "value": {
+         "mode": "fixed",
+         "fixedColor": "#EF5350"
+        }
+       }
+      ]
+     },
+     {
+      "matcher": {
+       "id": "byName",
+       "options": "TR Raum"
+      },
+      "properties": [
+       {
+        "id": "color",
+        "value": {
+         "mode": "fixed",
+         "fixedColor": "#C9D6E2"
+        }
+       },
+       {
+        "id": "custom.lineStyle",
+        "value": {
+         "fill": "dot",
+         "dash": [
+          2,
+          3
+         ]
+        }
+       }
+      ]
+     }
+    ]
+   },
+   "options": {
+    "legend": {
+     "displayMode": "list",
+     "placement": "bottom",
+     "showLegend": true
+    },
+    "tooltip": {
+     "mode": "multi",
+     "sort": "none"
+    }
+   }
+  },
+  {
+   "type": "barchart",
+   "title": "Vergleich: Tagesmaxima je Messstelle",
+   "id": 16,
+   "datasource": {
+    "type": "influxdb",
+    "uid": "kompressor-influx"
+   },
+   "description": "",
+   "gridPos": {
+    "h": 8,
+    "w": 6,
+    "x": 18,
+    "y": 23
+   },
+   "targets": [
+    {
+     "refId": "A",
+     "datasource": {
+      "type": "influxdb",
+      "uid": "kompressor-influx"
+     },
+     "query": "SELECT max(\"max_value\") FROM \"agg_1m\".\"sensor\" WHERE \"sensor\" = 'temp_stage1' AND \"source\" =~ /^$source$/ AND $timeFilter GROUP BY time(1d) fill(none)",
+     "rawQuery": true,
+     "resultFormat": "time_series",
+     "alias": "T1 Zylinder 1"
+    },
+    {
+     "refId": "B",
+     "datasource": {
+      "type": "influxdb",
+      "uid": "kompressor-influx"
+     },
+     "query": "SELECT max(\"max_value\") FROM \"agg_1m\".\"sensor\" WHERE \"sensor\" = 'temp_coil12' AND \"source\" =~ /^$source$/ AND $timeFilter GROUP BY time(1d) fill(none)",
+     "rawQuery": true,
+     "resultFormat": "time_series",
+     "alias": "T12 Kühlspirale 1–2"
+    },
+    {
+     "refId": "C",
+     "datasource": {
+      "type": "influxdb",
+      "uid": "kompressor-influx"
+     },
+     "query": "SELECT max(\"max_value\") FROM \"agg_1m\".\"sensor\" WHERE \"sensor\" = 'temp_stage2' AND \"source\" =~ /^$source$/ AND $timeFilter GROUP BY time(1d) fill(none)",
+     "rawQuery": true,
+     "resultFormat": "time_series",
+     "alias": "T2 Zylinder 2"
+    },
+    {
+     "refId": "D",
+     "datasource": {
+      "type": "influxdb",
+      "uid": "kompressor-influx"
+     },
+     "query": "SELECT max(\"max_value\") FROM \"agg_1m\".\"sensor\" WHERE \"sensor\" = 'temp_coil23' AND \"source\" =~ /^$source$/ AND $timeFilter GROUP BY time(1d) fill(none)",
+     "rawQuery": true,
+     "resultFormat": "time_series",
+     "alias": "T23 Kühlspirale 2–3"
+    },
+    {
+     "refId": "E",
+     "datasource": {
+      "type": "influxdb",
+      "uid": "kompressor-influx"
+     },
+     "query": "SELECT max(\"max_value\") FROM \"agg_1m\".\"sensor\" WHERE \"sensor\" = 'temp_stage3' AND \"source\" =~ /^$source$/ AND $timeFilter GROUP BY time(1d) fill(none)",
+     "rawQuery": true,
+     "resultFormat": "time_series",
+     "alias": "T3 Zylinder 3"
+    }
+   ],
+   "fieldConfig": {
+    "defaults": {
+     "unit": "celsius",
+     "decimals": 0,
+     "color": {
+      "mode": "palette-classic"
+     }
+    },
+    "overrides": [
+     {
+      "matcher": {
+       "id": "byName",
+       "options": "T1 Zylinder 1"
+      },
+      "properties": [
+       {
+        "id": "color",
+        "value": {
+         "mode": "fixed",
+         "fixedColor": "#2F8CF0"
+        }
+       }
+      ]
+     },
+     {
+      "matcher": {
+       "id": "byName",
+       "options": "T12 Kühlspirale 1–2"
+      },
+      "properties": [
+       {
+        "id": "color",
+        "value": {
+         "mode": "fixed",
+         "fixedColor": "#8ED9D3"
+        }
+       },
+       {
+        "id": "custom.lineStyle",
+        "value": {
+         "fill": "dash",
+         "dash": [
+          6,
+          4
+         ]
+        }
+       }
+      ]
+     },
+     {
+      "matcher": {
+       "id": "byName",
+       "options": "T2 Zylinder 2"
+      },
+      "properties": [
+       {
+        "id": "color",
+        "value": {
+         "mode": "fixed",
+         "fixedColor": "#F2B544"
+        }
+       }
+      ]
+     },
+     {
+      "matcher": {
+       "id": "byName",
+       "options": "T23 Kühlspirale 2–3"
+      },
+      "properties": [
+       {
+        "id": "color",
+        "value": {
+         "mode": "fixed",
+         "fixedColor": "#FF8A65"
+        }
+       },
+       {
+        "id": "custom.lineStyle",
+        "value": {
+         "fill": "dash",
+         "dash": [
+          6,
+          4
+         ]
+        }
+       }
+      ]
+     },
+     {
+      "matcher": {
+       "id": "byName",
+       "options": "T3 Zylinder 3"
+      },
+      "properties": [
+       {
+        "id": "color",
+        "value": {
+         "mode": "fixed",
+         "fixedColor": "#EF5350"
+        }
+       }
+      ]
+     },
+     {
+      "matcher": {
+       "id": "byName",
+       "options": "TR Raum"
+      },
+      "properties": [
+       {
+        "id": "color",
+        "value": {
+         "mode": "fixed",
+         "fixedColor": "#C9D6E2"
+        }
+       },
+       {
+        "id": "custom.lineStyle",
+        "value": {
+         "fill": "dot",
+         "dash": [
+          2,
+          3
+         ]
+        }
+       }
+      ]
+     }
+    ]
+   },
+   "options": {
+    "orientation": "auto",
+    "xTickLabelRotation": 0,
+    "showValue": "auto",
+    "groupWidth": 0.7,
+    "barWidth": 0.9,
+    "legend": {
+     "displayMode": "list",
+     "placement": "bottom",
+     "showLegend": true
+    },
+    "xField": "Time"
+   },
+   "timeFrom": "14d",
+   "hideTimeOverride": true
+  },
+  {
+   "type": "row",
+   "title": "Motor",
+   "id": 17,
+   "collapsed": false,
+   "gridPos": {
+    "h": 1,
+    "w": 24,
+    "x": 0,
+    "y": 31
+   },
+   "panels": []
+  },
+  {
+   "type": "state-timeline",
+   "title": "Motorstatus / Betriebszeiten",
+   "id": 18,
+   "datasource": {
+    "type": "influxdb",
+    "uid": "kompressor-influx"
+   },
+   "description": "",
+   "gridPos": {
+    "h": 5,
+    "w": 16,
+    "x": 0,
+    "y": 32
+   },
+   "targets": [
+    {
+     "refId": "A",
+     "datasource": {
+      "type": "influxdb",
+      "uid": "kompressor-influx"
+     },
+     "query": "SELECT last(\"running\") FROM \"raw\".\"state\" WHERE \"source\" =~ /^$source$/ AND $timeFilter AND \"running\" >= 0 GROUP BY time($__interval) fill(null)",
+     "rawQuery": true,
+     "resultFormat": "time_series",
+     "alias": "Motor"
+    }
+   ],
+   "fieldConfig": {
+    "defaults": {
+     "mappings": [
+      {
+       "type": "value",
+       "options": {
+        "0": {
+         "text": "STEHT",
+         "color": "#5a6b7d",
+         "index": 0
+        },
+        "1": {
+         "text": "LÄUFT",
+         "color": "green",
+         "index": 1
+        }
+       }
+      }
+     ],
+     "color": {
+      "mode": "thresholds"
+     },
+     "thresholds": {
+      "mode": "absolute",
+      "steps": [
+       {
+        "color": "#5a6b7d",
+        "value": null
+       }
+      ]
+     },
+     "custom": {
+      "fillOpacity": 80,
+      "lineWidth": 0
+     }
+    },
+    "overrides": []
+   },
+   "options": {
+    "showValue": "never",
+    "mergeValues": true,
+    "alignValue": "left",
+    "rowHeight": 0.8,
+    "legend": {
+     "showLegend": false,
+     "displayMode": "list",
+     "placement": "bottom"
+    }
+   }
+  },
+  {
+   "type": "stat",
+   "title": "Motorstarts gesamt",
+   "id": 19,
+   "datasource": {
+    "type": "influxdb",
+    "uid": "kompressor-influx"
+   },
+   "description": "",
+   "gridPos": {
+    "h": 5,
+    "w": 4,
+    "x": 16,
+    "y": 32
+   },
+   "targets": [
+    {
+     "refId": "A",
+     "datasource": {
+      "type": "influxdb",
+      "uid": "kompressor-influx"
+     },
+     "query": "SELECT last(\"starts\") FROM \"raw\".\"counter\" WHERE $timeFilter AND \"source\" =~ /^$source$/",
+     "rawQuery": true,
+     "resultFormat": "time_series"
+    }
+   ],
+   "fieldConfig": {
+    "defaults": {
+     "noValue": "Keine Daten",
+     "decimals": 0,
+     "color": {
+      "mode": "fixed",
+      "fixedColor": "text"
+     }
+    },
+    "overrides": []
+   },
+   "options": {
+    "reduceOptions": {
+     "calcs": [
+      "lastNotNull"
+     ],
+     "fields": "",
+     "values": false
+    },
+    "colorMode": "value",
+    "graphMode": "none",
+    "textMode": "value",
+    "justifyMode": "center",
+    "orientation": "auto",
+    "showPercentChange": false,
+    "wideLayout": true
+   },
+   "timeFrom": "1h",
+   "hideTimeOverride": true
+  },
+  {
+   "type": "stat",
+   "title": "Starts im Zeitraum",
+   "id": 20,
+   "datasource": {
+    "type": "influxdb",
+    "uid": "kompressor-influx"
+   },
+   "description": "",
+   "gridPos": {
+    "h": 5,
+    "w": 4,
+    "x": 20,
+    "y": 32
+   },
+   "targets": [
+    {
+     "refId": "A",
+     "datasource": {
+      "type": "influxdb",
+      "uid": "kompressor-influx"
+     },
+     "query": "SELECT count(\"value\") FROM \"events\".\"events\" WHERE \"type\" = 'motor_start' AND \"source\" =~ /^$source$/ AND $timeFilter",
+     "rawQuery": true,
+     "resultFormat": "time_series"
+    }
+   ],
+   "fieldConfig": {
+    "defaults": {
+     "noValue": "0",
+     "decimals": 0,
+     "color": {
+      "mode": "fixed",
+      "fixedColor": "blue"
+     }
+    },
+    "overrides": []
+   },
+   "options": {
+    "reduceOptions": {
+     "calcs": [
+      "lastNotNull"
+     ],
+     "fields": "",
+     "values": false
+    },
+    "colorMode": "value",
+    "graphMode": "none",
+    "textMode": "value",
+    "justifyMode": "center",
+    "orientation": "auto",
+    "showPercentChange": false,
+    "wideLayout": true
+   }
+  },
+  {
+   "type": "timeseries",
+   "title": "Motorstrom",
+   "id": 21,
+   "datasource": {
+    "type": "influxdb",
+    "uid": "kompressor-influx"
+   },
+   "description": "",
+   "gridPos": {
+    "h": 8,
+    "w": 12,
+    "x": 0,
+    "y": 37
+   },
+   "targets": [
+    {
+     "refId": "A",
+     "datasource": {
+      "type": "influxdb",
+      "uid": "kompressor-influx"
+     },
+     "query": "SELECT mean(\"value\") FROM \"raw\".\"sensor\" WHERE \"sensor\" = 'motor_current' AND \"source\" =~ /^$source$/ AND $timeFilter GROUP BY time($__interval) fill(null)",
+     "rawQuery": true,
+     "resultFormat": "time_series",
+     "alias": "Motorstrom"
+    },
+    {
+     "refId": "B",
+     "datasource": {
+      "type": "influxdb",
+      "uid": "kompressor-influx"
+     },
+     "query": "SELECT mean(\"value\") FROM \"raw\".\"sensor\" WHERE \"sensor\" = 'supply_voltage' AND \"source\" =~ /^$source$/ AND $timeFilter GROUP BY time($__interval) fill(null)",
+     "rawQuery": true,
+     "resultFormat": "time_series",
+     "alias": "Spannung"
+    }
+   ],
+   "fieldConfig": {
+    "defaults": {
+     "unit": "amp",
+     "custom": {
+      "drawStyle": "line",
+      "lineWidth": 2,
+      "fillOpacity": 10,
+      "spanNulls": false,
+      "showPoints": "never",
+      "lineInterpolation": "smooth",
+      "stacking": {
+       "mode": "none"
+      },
+      "axisBorderShow": false
+     },
+     "decimals": 1
+    },
+    "overrides": [
+     {
+      "matcher": {
+       "id": "byName",
+       "options": "Spannung"
+      },
+      "properties": [
+       {
+        "id": "unit",
+        "value": "volt"
+       },
+       {
+        "id": "custom.axisPlacement",
+        "value": "right"
+       },
+       {
+        "id": "custom.fillOpacity",
+        "value": 0
+       },
+       {
+        "id": "color",
+        "value": {
+         "mode": "fixed",
+         "fixedColor": "#8e8e8e"
+        }
+       }
+      ]
+     }
+    ]
+   },
+   "options": {
+    "legend": {
+     "displayMode": "list",
+     "placement": "bottom",
+     "showLegend": true
+    },
+    "tooltip": {
+     "mode": "multi",
+     "sort": "none"
+    }
+   }
+  },
+  {
+   "type": "barchart",
+   "title": "Betriebsstunden pro Tag",
+   "id": 22,
+   "datasource": {
+    "type": "influxdb",
+    "uid": "kompressor-influx"
+   },
+   "description": "",
+   "gridPos": {
+    "h": 8,
+    "w": 6,
+    "x": 12,
+    "y": 37
+   },
+   "targets": [
+    {
+     "refId": "A",
+     "datasource": {
+      "type": "influxdb",
+      "uid": "kompressor-influx"
+     },
+     "query": "SELECT spread(\"total_s\") / 3600 FROM \"raw\".\"counter\" WHERE \"source\" =~ /^$source$/ AND $timeFilter GROUP BY time(1d) fill(0)",
+     "rawQuery": true,
+     "resultFormat": "time_series",
+     "alias": "Betriebsstunden"
+    }
+   ],
+   "fieldConfig": {
+    "defaults": {
+     "unit": "h",
+     "decimals": 2,
+     "color": {
+      "mode": "fixed",
+      "fixedColor": "blue"
+     }
+    },
+    "overrides": []
+   },
+   "options": {
+    "orientation": "auto",
+    "showValue": "auto",
+    "xField": "Time",
+    "groupWidth": 0.7,
+    "barWidth": 0.9,
+    "legend": {
+     "showLegend": false,
+     "displayMode": "list",
+     "placement": "bottom"
+    }
+   },
+   "timeFrom": "14d",
+   "hideTimeOverride": true
+  },
+  {
+   "type": "table",
+   "title": "Letzte Betriebszyklen",
+   "id": 23,
+   "datasource": {
+    "type": "influxdb",
+    "uid": "kompressor-influx"
+   },
+   "description": "",
+   "gridPos": {
+    "h": 8,
+    "w": 6,
+    "x": 18,
+    "y": 37
+   },
+   "targets": [
+    {
+     "refId": "A",
+     "datasource": {
+      "type": "influxdb",
+      "uid": "kompressor-influx"
+     },
+     "query": "SELECT \"value\" / 60 AS \"Dauer\" FROM \"events\".\"events\" WHERE \"type\" = 'cycle' AND \"source\" =~ /^$source$/ AND $timeFilter ORDER BY time DESC LIMIT 20",
+     "rawQuery": true,
+     "resultFormat": "table"
+    }
+   ],
+   "fieldConfig": {
+    "defaults": {
+     "unit": "m",
+     "decimals": 1,
+     "noValue": "Noch keine Zyklen"
+    },
+    "overrides": []
+   },
+   "options": {
+    "showHeader": true,
+    "cellHeight": "sm",
+    "sortBy": [
+     {
+      "displayName": "Time",
+      "desc": true
+     }
+    ]
+   },
+   "timeFrom": "30d",
+   "hideTimeOverride": true
+  },
+  {
+   "type": "row",
+   "title": "Wartung",
+   "id": 24,
+   "collapsed": false,
+   "gridPos": {
+    "h": 1,
+    "w": 24,
+    "x": 0,
+    "y": 45
+   },
+   "panels": []
+  },
+  {
+   "type": "stat",
+   "title": "Wartungsstatus",
+   "id": 25,
+   "datasource": {
+    "type": "influxdb",
+    "uid": "kompressor-influx"
+   },
+   "description": "Intervalle sind noch nicht nach Herstellerunterlagen festgelegt.",
+   "gridPos": {
+    "h": 5,
+    "w": 4,
+    "x": 0,
+    "y": 46
+   },
+   "targets": [
+    {
+     "refId": "A",
+     "datasource": {
+      "type": "influxdb",
+      "uid": "kompressor-influx"
+     },
+     "query": "SELECT last(\"status_code\") FROM \"raw\".\"maintenance\" WHERE $timeFilter AND \"source\" =~ /^$source$/",
+     "rawQuery": true,
+     "resultFormat": "time_series"
+    }
+   ],
+   "fieldConfig": {
+    "defaults": {
+     "mappings": [
+      {
+       "type": "value",
+       "options": {
+        "0": {
+         "text": "OK",
+         "color": "green",
+         "index": 0
+        },
+        "1": {
+         "text": "BALD FÄLLIG",
+         "color": "orange",
+         "index": 1
+        },
+        "2": {
+         "text": "FÄLLIG",
+         "color": "red",
+         "index": 2
+        },
+        "3": {
+         "text": "NICHT FESTGELEGT",
+         "color": "#8e8e8e",
+         "index": 3
+        }
+       }
+      }
+     ],
+     "noValue": "Keine Daten",
+     "color": {
+      "mode": "thresholds"
+     },
+     "thresholds": {
+      "mode": "absolute",
+      "steps": [
+       {
+        "color": "green",
+        "value": null
+       }
+      ]
+     }
+    },
+    "overrides": []
+   },
+   "options": {
+    "reduceOptions": {
+     "calcs": [
+      "lastNotNull"
+     ],
+     "fields": "",
+     "values": false
+    },
+    "colorMode": "background",
+    "graphMode": "none",
+    "textMode": "value",
+    "justifyMode": "center",
+    "orientation": "auto",
+    "showPercentChange": false,
+    "wideLayout": true
+   },
+   "timeFrom": "10m",
+   "hideTimeOverride": true
+  },
+  {
+   "type": "stat",
+   "title": "Restlaufzeit bis Wartung",
+   "id": 26,
+   "datasource": {
+    "type": "influxdb",
+    "uid": "kompressor-influx"
+   },
+   "description": "",
+   "gridPos": {
+    "h": 5,
+    "w": 4,
+    "x": 4,
+    "y": 46
+   },
+   "targets": [
+    {
+     "refId": "A",
+     "datasource": {
+      "type": "influxdb",
+      "uid": "kompressor-influx"
+     },
+     "query": "SELECT last(\"remaining_h\") FROM \"raw\".\"maintenance\" WHERE $timeFilter AND \"source\" =~ /^$source$/",
+     "rawQuery": true,
+     "resultFormat": "time_series"
+    }
+   ],
+   "fieldConfig": {
+    "defaults": {
+     "unit": "h",
+     "decimals": 1,
+     "noValue": "nicht festgelegt",
+     "color": {
+      "mode": "thresholds"
+     },
+     "thresholds": {
+      "mode": "absolute",
+      "steps": [
+       {
+        "color": "red",
+        "value": null
+       },
+       {
+        "value": 0,
+        "color": "green"
+       }
+      ]
+     }
+    },
+    "overrides": []
+   },
+   "options": {
+    "reduceOptions": {
+     "calcs": [
+      "lastNotNull"
+     ],
+     "fields": "",
+     "values": false
+    },
+    "colorMode": "value",
+    "graphMode": "none",
+    "textMode": "value",
+    "justifyMode": "center",
+    "orientation": "auto",
+    "showPercentChange": false,
+    "wideLayout": true
+   },
+   "timeFrom": "10m",
+   "hideTimeOverride": true
+  },
+  {
+   "type": "stat",
+   "title": "Betriebsstunden seit Wartung",
+   "id": 27,
+   "datasource": {
+    "type": "influxdb",
+    "uid": "kompressor-influx"
+   },
+   "description": "",
+   "gridPos": {
+    "h": 5,
+    "w": 4,
+    "x": 8,
+    "y": 46
+   },
+   "targets": [
+    {
+     "refId": "A",
+     "datasource": {
+      "type": "influxdb",
+      "uid": "kompressor-influx"
+     },
+     "query": "SELECT last(\"hours_since\") FROM \"raw\".\"maintenance\" WHERE $timeFilter AND \"source\" =~ /^$source$/",
+     "rawQuery": true,
+     "resultFormat": "time_series"
+    }
+   ],
+   "fieldConfig": {
+    "defaults": {
+     "unit": "h",
+     "decimals": 2,
+     "noValue": "Keine Daten",
+     "color": {
+      "mode": "fixed",
+      "fixedColor": "text"
+     }
+    },
+    "overrides": []
+   },
+   "options": {
+    "reduceOptions": {
+     "calcs": [
+      "lastNotNull"
+     ],
+     "fields": "",
+     "values": false
+    },
+    "colorMode": "value",
+    "graphMode": "none",
+    "textMode": "value",
+    "justifyMode": "center",
+    "orientation": "auto",
+    "showPercentChange": false,
+    "wideLayout": true
+   },
+   "timeFrom": "10m",
+   "hideTimeOverride": true
+  },
+  {
+   "type": "stat",
+   "title": "Filterstatus",
+   "id": 28,
+   "datasource": {
+    "type": "influxdb",
+    "uid": "kompressor-influx"
+   },
+   "description": "",
+   "gridPos": {
+    "h": 5,
+    "w": 4,
+    "x": 12,
+    "y": 46
+   },
+   "targets": [
+    {
+     "refId": "A",
+     "datasource": {
+      "type": "influxdb",
+      "uid": "kompressor-influx"
+     },
+     "query": "SELECT last(\"filter_status_code\") FROM \"raw\".\"maintenance\" WHERE $timeFilter AND \"source\" =~ /^$source$/",
+     "rawQuery": true,
+     "resultFormat": "time_series"
+    }
+   ],
+   "fieldConfig": {
+    "defaults": {
+     "mappings": [
+      {
+       "type": "value",
+       "options": {
+        "0": {
+         "text": "OK",
+         "color": "green",
+         "index": 0
+        },
+        "1": {
+         "text": "BALD FÄLLIG",
+         "color": "orange",
+         "index": 1
+        },
+        "2": {
+         "text": "FÄLLIG",
+         "color": "red",
+         "index": 2
+        },
+        "3": {
+         "text": "NICHT FESTGELEGT",
+         "color": "#8e8e8e",
+         "index": 3
+        }
+       }
+      }
+     ],
+     "noValue": "Keine Daten",
+     "color": {
+      "mode": "thresholds"
+     },
+     "thresholds": {
+      "mode": "absolute",
+      "steps": [
+       {
+        "color": "green",
+        "value": null
+       }
+      ]
+     }
+    },
+    "overrides": []
+   },
+   "options": {
+    "reduceOptions": {
+     "calcs": [
+      "lastNotNull"
+     ],
+     "fields": "",
+     "values": false
+    },
+    "colorMode": "background",
+    "graphMode": "none",
+    "textMode": "value",
+    "justifyMode": "center",
+    "orientation": "auto",
+    "showPercentChange": false,
+    "wideLayout": true
+   },
+   "timeFrom": "10m",
+   "hideTimeOverride": true
+  },
+  {
+   "type": "stat",
+   "title": "Betriebsstunden seit Filterwechsel",
+   "id": 29,
+   "datasource": {
+    "type": "influxdb",
+    "uid": "kompressor-influx"
+   },
+   "description": "",
+   "gridPos": {
+    "h": 5,
+    "w": 4,
+    "x": 16,
+    "y": 46
+   },
+   "targets": [
+    {
+     "refId": "A",
+     "datasource": {
+      "type": "influxdb",
+      "uid": "kompressor-influx"
+     },
+     "query": "SELECT last(\"filter_hours_since\") FROM \"raw\".\"maintenance\" WHERE $timeFilter AND \"source\" =~ /^$source$/",
+     "rawQuery": true,
+     "resultFormat": "time_series"
+    }
+   ],
+   "fieldConfig": {
+    "defaults": {
+     "unit": "h",
+     "decimals": 2,
+     "noValue": "Keine Daten",
+     "color": {
+      "mode": "fixed",
+      "fixedColor": "text"
+     }
+    },
+    "overrides": []
+   },
+   "options": {
+    "reduceOptions": {
+     "calcs": [
+      "lastNotNull"
+     ],
+     "fields": "",
+     "values": false
+    },
+    "colorMode": "value",
+    "graphMode": "none",
+    "textMode": "value",
+    "justifyMode": "center",
+    "orientation": "auto",
+    "showPercentChange": false,
+    "wideLayout": true
+   },
+   "timeFrom": "10m",
+   "hideTimeOverride": true
+  },
+  {
+   "type": "stat",
+   "title": "Intervalle (vorläufig)",
+   "id": 30,
+   "datasource": {
+    "type": "influxdb",
+    "uid": "kompressor-influx"
+   },
+   "description": "0 = noch nicht festgelegt (Herstellerunterlagen prüfen).",
+   "gridPos": {
+    "h": 5,
+    "w": 4,
+    "x": 20,
+    "y": 46
+   },
+   "targets": [
+    {
+     "refId": "A",
+     "datasource": {
+      "type": "influxdb",
+      "uid": "kompressor-influx"
+     },
+     "query": "SELECT last(\"interval_h\") AS \"Wartung\", last(\"filter_interval_h\") AS \"Filter\" FROM \"raw\".\"maintenance\" WHERE $timeFilter AND \"source\" =~ /^$source$/",
+     "rawQuery": true,
+     "resultFormat": "time_series"
+    }
+   ],
+   "fieldConfig": {
+    "defaults": {
+     "unit": "h",
+     "mappings": [
+      {
+       "type": "value",
+       "options": {
+        "0": {
+         "text": "nicht festgelegt",
+         "index": 0
+        }
+       }
+      }
+     ],
+     "noValue": "Keine Daten",
+     "color": {
+      "mode": "fixed",
+      "fixedColor": "text"
+     }
+    },
+    "overrides": []
+   },
+   "options": {
+    "reduceOptions": {
+     "calcs": [
+      "lastNotNull"
+     ],
+     "fields": "",
+     "values": false
+    },
+    "colorMode": "value",
+    "graphMode": "none",
+    "textMode": "value_and_name",
+    "justifyMode": "center",
+    "orientation": "auto",
+    "showPercentChange": false,
+    "wideLayout": true
+   },
+   "timeFrom": "10m",
+   "hideTimeOverride": true
+  },
+  {
+   "type": "table",
+   "title": "Wartungshistorie",
+   "id": 31,
+   "datasource": {
+    "type": "influxdb",
+    "uid": "kompressor-influx"
+   },
+   "description": "",
+   "gridPos": {
+    "h": 6,
+    "w": 24,
+    "x": 0,
+    "y": 51
+   },
+   "targets": [
+    {
+     "refId": "A",
+     "datasource": {
+      "type": "influxdb",
+      "uid": "kompressor-influx"
+     },
+     "query": "SELECT \"text\" AS \"Ereignis\", \"type\" AS \"Art\" FROM \"events\".\"events\" WHERE \"type\" =~ /^(maintenance|filter_change|maintenance_config)$/ AND $timeFilter ORDER BY time DESC LIMIT 100",
+     "rawQuery": true,
+     "resultFormat": "table"
+    }
+   ],
+   "fieldConfig": {
+    "defaults": {
+     "noValue": "Noch keine Wartungsereignisse"
+    },
+    "overrides": []
+   },
+   "options": {
+    "showHeader": true,
+    "cellHeight": "sm"
+   },
+   "timeFrom": "5y",
+   "hideTimeOverride": true
+  },
+  {
+   "type": "row",
+   "title": "Diagnose",
+   "id": 32,
+   "collapsed": false,
+   "gridPos": {
+    "h": 1,
+    "w": 24,
+    "x": 0,
+    "y": 57
+   },
+   "panels": []
+  },
+  {
+   "type": "timeseries",
+   "title": "Sensorverfügbarkeit (Messwerte pro Minute)",
+   "id": 33,
+   "datasource": {
+    "type": "influxdb",
+    "uid": "kompressor-influx"
+   },
+   "description": "Einbrüche auf 0 = Datenlücke.",
+   "gridPos": {
+    "h": 8,
+    "w": 12,
+    "x": 0,
+    "y": 58
+   },
+   "targets": [
+    {
+     "refId": "A",
+     "datasource": {
+      "type": "influxdb",
+      "uid": "kompressor-influx"
+     },
+     "query": "SELECT count(\"value\") FROM \"raw\".\"sensor\" WHERE \"source\" =~ /^$source$/ AND $timeFilter GROUP BY time(1m), \"sensor\" fill(0)",
+     "rawQuery": true,
+     "resultFormat": "time_series",
+     "alias": "$tag_sensor"
+    }
+   ],
+   "fieldConfig": {
+    "defaults": {
+     "unit": "",
+     "custom": {
+      "drawStyle": "line",
+      "lineWidth": 2,
+      "fillOpacity": 0,
+      "spanNulls": false,
+      "showPoints": "never",
+      "lineInterpolation": "smooth",
+      "stacking": {
+       "mode": "none"
+      },
+      "axisBorderShow": false
+     },
+     "decimals": 0,
+     "min": 0
+    },
+    "overrides": []
+   },
+   "options": {
+    "legend": {
+     "displayMode": "list",
+     "placement": "bottom",
+     "showLegend": true
+    },
+    "tooltip": {
+     "mode": "multi",
+     "sort": "none"
+    }
+   }
+  },
+  {
+   "type": "timeseries",
+   "title": "Alter der letzten Messung / Meldungen",
+   "id": 34,
+   "datasource": {
+    "type": "influxdb",
+    "uid": "kompressor-influx"
+   },
+   "description": "",
+   "gridPos": {
+    "h": 8,
+    "w": 12,
+    "x": 12,
+    "y": 58
+   },
+   "targets": [
+    {
+     "refId": "A",
+     "datasource": {
+      "type": "influxdb",
+      "uid": "kompressor-influx"
+     },
+     "query": "SELECT max(\"data_age_s\") FROM \"raw\".\"system\" WHERE $timeFilter GROUP BY time($__interval) fill(null)",
+     "rawQuery": true,
+     "resultFormat": "time_series",
+     "alias": "Datenalter (s)"
+    },
+    {
+     "refId": "B",
+     "datasource": {
+      "type": "influxdb",
+      "uid": "kompressor-influx"
+     },
+     "query": "SELECT max(\"faults\") FROM \"raw\".\"state\" WHERE $timeFilter GROUP BY time($__interval) fill(null)",
+     "rawQuery": true,
+     "resultFormat": "time_series",
+     "alias": "Störungen"
+    },
+    {
+     "refId": "C",
+     "datasource": {
+      "type": "influxdb",
+      "uid": "kompressor-influx"
+     },
+     "query": "SELECT max(\"warnings\") FROM \"raw\".\"state\" WHERE $timeFilter GROUP BY time($__interval) fill(null)",
+     "rawQuery": true,
+     "resultFormat": "time_series",
+     "alias": "Warnungen"
+    }
+   ],
+   "fieldConfig": {
+    "defaults": {
+     "unit": "",
+     "custom": {
+      "drawStyle": "line",
+      "lineWidth": 2,
+      "fillOpacity": 0,
+      "spanNulls": false,
+      "showPoints": "never",
+      "lineInterpolation": "smooth",
+      "stacking": {
+       "mode": "none"
+      },
+      "axisBorderShow": false
+     },
+     "decimals": 0,
+     "min": 0
+    },
+    "overrides": [
+     {
+      "matcher": {
+       "id": "byName",
+       "options": "Störungen"
+      },
+      "properties": [
+       {
+        "id": "color",
+        "value": {
+         "mode": "fixed",
+         "fixedColor": "red"
+        }
+       },
+       {
+        "id": "custom.axisPlacement",
+        "value": "right"
+       }
+      ]
+     },
+     {
+      "matcher": {
+       "id": "byName",
+       "options": "Warnungen"
+      },
+      "properties": [
+       {
+        "id": "color",
+        "value": {
+         "mode": "fixed",
+         "fixedColor": "orange"
+        }
+       },
+       {
+        "id": "custom.axisPlacement",
+        "value": "right"
+       }
+      ]
+     }
+    ]
+   },
+   "options": {
+    "legend": {
+     "displayMode": "list",
+     "placement": "bottom",
+     "showLegend": true
+    },
+    "tooltip": {
+     "mode": "multi",
+     "sort": "none"
+    }
+   }
+  },
+  {
+   "type": "stat",
+   "title": "InfluxDB",
+   "id": 35,
+   "datasource": {
+    "type": "influxdb",
+    "uid": "kompressor-influx"
+   },
+   "description": "",
+   "gridPos": {
+    "h": 4,
+    "w": 4,
+    "x": 0,
+    "y": 66
+   },
+   "targets": [
+    {
+     "refId": "A",
+     "datasource": {
+      "type": "influxdb",
+      "uid": "kompressor-influx"
+     },
+     "query": "SELECT last(\"influx_ok\") FROM \"raw\".\"system\" WHERE $timeFilter",
+     "rawQuery": true,
+     "resultFormat": "time_series"
+    }
+   ],
+   "fieldConfig": {
+    "defaults": {
+     "noValue": "Keine Daten",
+     "mappings": [
+      {
+       "type": "value",
+       "options": {
+        "1": {
+         "text": "OK",
+         "color": "green"
+        },
+        "0": {
+         "text": "FEHLER",
+         "color": "red"
+        }
+       }
+      }
+     ],
+     "color": {
+      "mode": "thresholds"
+     },
+     "thresholds": {
+      "mode": "absolute",
+      "steps": [
+       {
+        "color": "red",
+        "value": null
+       },
+       {
+        "value": 1,
+        "color": "green"
+       }
+      ]
+     }
+    },
+    "overrides": []
+   },
+   "options": {
+    "reduceOptions": {
+     "calcs": [
+      "lastNotNull"
+     ],
+     "fields": "",
+     "values": false
+    },
+    "colorMode": "background",
+    "graphMode": "none",
+    "textMode": "value",
+    "justifyMode": "center",
+    "orientation": "auto",
+    "showPercentChange": false,
+    "wideLayout": true
+   },
+   "timeFrom": "2m",
+   "hideTimeOverride": true
+  },
+  {
+   "type": "stat",
+   "title": "DB-Puffer",
+   "id": 36,
+   "datasource": {
+    "type": "influxdb",
+    "uid": "kompressor-influx"
+   },
+   "description": "",
+   "gridPos": {
+    "h": 4,
+    "w": 4,
+    "x": 4,
+    "y": 66
+   },
+   "targets": [
+    {
+     "refId": "A",
+     "datasource": {
+      "type": "influxdb",
+      "uid": "kompressor-influx"
+     },
+     "query": "SELECT last(\"db_buffer\") FROM \"raw\".\"system\" WHERE $timeFilter",
+     "rawQuery": true,
+     "resultFormat": "time_series"
+    }
+   ],
+   "fieldConfig": {
+    "defaults": {
+     "noValue": "Keine Daten",
+     "decimals": 0,
+     "color": {
+      "mode": "fixed",
+      "fixedColor": "text"
+     },
+     "unit": "short"
+    },
+    "overrides": []
+   },
+   "options": {
+    "reduceOptions": {
+     "calcs": [
+      "lastNotNull"
+     ],
+     "fields": "",
+     "values": false
+    },
+    "colorMode": "value",
+    "graphMode": "area",
+    "textMode": "value",
+    "justifyMode": "center",
+    "orientation": "auto",
+    "showPercentChange": false,
+    "wideLayout": true
+   }
+  },
+  {
+   "type": "stat",
+   "title": "Nachrichten/min",
+   "id": 37,
+   "datasource": {
+    "type": "influxdb",
+    "uid": "kompressor-influx"
+   },
+   "description": "",
+   "gridPos": {
+    "h": 4,
+    "w": 4,
+    "x": 8,
+    "y": 66
+   },
+   "targets": [
+    {
+     "refId": "A",
+     "datasource": {
+      "type": "influxdb",
+      "uid": "kompressor-influx"
+     },
+     "query": "SELECT last(\"rx_per_min\") FROM \"raw\".\"system\" WHERE $timeFilter",
+     "rawQuery": true,
+     "resultFormat": "time_series"
+    }
+   ],
+   "fieldConfig": {
+    "defaults": {
+     "noValue": "Keine Daten",
+     "decimals": 0,
+     "color": {
+      "mode": "fixed",
+      "fixedColor": "text"
+     },
+     "unit": "short"
+    },
+    "overrides": []
+   },
+   "options": {
+    "reduceOptions": {
+     "calcs": [
+      "lastNotNull"
+     ],
+     "fields": "",
+     "values": false
+    },
+    "colorMode": "value",
+    "graphMode": "area",
+    "textMode": "value",
+    "justifyMode": "center",
+    "orientation": "auto",
+    "showPercentChange": false,
+    "wideLayout": true
+   }
+  },
+  {
+   "type": "stat",
+   "title": "Ungültige Nachrichten",
+   "id": 38,
+   "datasource": {
+    "type": "influxdb",
+    "uid": "kompressor-influx"
+   },
+   "description": "",
+   "gridPos": {
+    "h": 4,
+    "w": 4,
+    "x": 12,
+    "y": 66
+   },
+   "targets": [
+    {
+     "refId": "A",
+     "datasource": {
+      "type": "influxdb",
+      "uid": "kompressor-influx"
+     },
+     "query": "SELECT last(\"invalid_total\") FROM \"raw\".\"system\" WHERE $timeFilter",
+     "rawQuery": true,
+     "resultFormat": "time_series"
+    }
+   ],
+   "fieldConfig": {
+    "defaults": {
+     "noValue": "Keine Daten",
+     "decimals": 0,
+     "color": {
+      "mode": "fixed",
+      "fixedColor": "text"
+     },
+     "unit": "short"
+    },
+    "overrides": []
+   },
+   "options": {
+    "reduceOptions": {
+     "calcs": [
+      "lastNotNull"
+     ],
+     "fields": "",
+     "values": false
+    },
+    "colorMode": "value",
+    "graphMode": "area",
+    "textMode": "value",
+    "justifyMode": "center",
+    "orientation": "auto",
+    "showPercentChange": false,
+    "wideLayout": true
+   }
+  },
+  {
+   "type": "stat",
+   "title": "Verworfene Duplikate",
+   "id": 39,
+   "datasource": {
+    "type": "influxdb",
+    "uid": "kompressor-influx"
+   },
+   "description": "",
+   "gridPos": {
+    "h": 4,
+    "w": 4,
+    "x": 16,
+    "y": 66
+   },
+   "targets": [
+    {
+     "refId": "A",
+     "datasource": {
+      "type": "influxdb",
+      "uid": "kompressor-influx"
+     },
+     "query": "SELECT last(\"duplicates_total\") FROM \"raw\".\"system\" WHERE $timeFilter",
+     "rawQuery": true,
+     "resultFormat": "time_series"
+    }
+   ],
+   "fieldConfig": {
+    "defaults": {
+     "noValue": "Keine Daten",
+     "decimals": 0,
+     "color": {
+      "mode": "fixed",
+      "fixedColor": "text"
+     },
+     "unit": "short"
+    },
+    "overrides": []
+   },
+   "options": {
+    "reduceOptions": {
+     "calcs": [
+      "lastNotNull"
+     ],
+     "fields": "",
+     "values": false
+    },
+    "colorMode": "value",
+    "graphMode": "area",
+    "textMode": "value",
+    "justifyMode": "center",
+    "orientation": "auto",
+    "showPercentChange": false,
+    "wideLayout": true
+   }
+  },
+  {
+   "type": "stat",
+   "title": "Korrigierte Zeitstempel",
+   "id": 40,
+   "datasource": {
+    "type": "influxdb",
+    "uid": "kompressor-influx"
+   },
+   "description": "",
+   "gridPos": {
+    "h": 4,
+    "w": 4,
+    "x": 20,
+    "y": 66
+   },
+   "targets": [
+    {
+     "refId": "A",
+     "datasource": {
+      "type": "influxdb",
+      "uid": "kompressor-influx"
+     },
+     "query": "SELECT last(\"ts_corrected_total\") FROM \"raw\".\"system\" WHERE $timeFilter",
+     "rawQuery": true,
+     "resultFormat": "time_series"
+    }
+   ],
+   "fieldConfig": {
+    "defaults": {
+     "noValue": "Keine Daten",
+     "decimals": 0,
+     "color": {
+      "mode": "fixed",
+      "fixedColor": "text"
+     },
+     "unit": "short"
+    },
+    "overrides": []
+   },
+   "options": {
+    "reduceOptions": {
+     "calcs": [
+      "lastNotNull"
+     ],
+     "fields": "",
+     "values": false
+    },
+    "colorMode": "value",
+    "graphMode": "area",
+    "textMode": "value",
+    "justifyMode": "center",
+    "orientation": "auto",
+    "showPercentChange": false,
+    "wideLayout": true
+   }
+  },
+  {
+   "type": "table",
+   "title": "Ereignisse (Meldungen, Starts/Stopps, Wartung, Simulation)",
+   "id": 41,
+   "datasource": {
+    "type": "influxdb",
+    "uid": "kompressor-influx"
+   },
+   "description": "",
+   "gridPos": {
+    "h": 9,
+    "w": 24,
+    "x": 0,
+    "y": 70
+   },
+   "targets": [
+    {
+     "refId": "A",
+     "datasource": {
+      "type": "influxdb",
+      "uid": "kompressor-influx"
+     },
+     "query": "SELECT \"text\" AS \"Ereignis\", \"type\" AS \"Art\", \"severity\" AS \"Schwere\", \"source\" AS \"Quelle\" FROM \"events\".\"events\" WHERE $timeFilter ORDER BY time DESC LIMIT 200",
+     "rawQuery": true,
+     "resultFormat": "table"
+    }
+   ],
+   "fieldConfig": {
+    "defaults": {
+     "noValue": "Keine Ereignisse im Zeitraum"
+    },
+    "overrides": [
+     {
+      "matcher": {
+       "id": "byName",
+       "options": "Schwere"
+      },
+      "properties": [
+       {
+        "id": "custom.cellOptions",
+        "value": {
+         "type": "color-text"
+        }
+       },
+       {
+        "id": "mappings",
+        "value": [
+         {
+          "type": "value",
+          "options": {
+           "stoerung": {
+            "text": "STÖRUNG",
+            "color": "red"
+           },
+           "warnung": {
+            "text": "Warnung",
+            "color": "orange"
+           }
+          }
+         }
+        ]
+       }
+      ]
+     }
+    ]
+   },
+   "options": {
+    "showHeader": true,
+    "cellHeight": "sm"
+   }
+  }
+ ]
+}

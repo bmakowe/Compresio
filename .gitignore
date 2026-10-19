@@ -1,0 +1,31 @@
+# Zugangsdaten niemals committen
+.env
+.env.*
+*.token
+secrets.yaml
+# lokale Rohdaten aus Abfragen
+tmp/
+*.local.json
+.venv/
+__pycache__/
+*.pyc
+node_modules/
+dashboard/test/shots/
+# Beispielkonfiguration mit Platzhaltern darf versioniert werden
+!.env.example
+# weitere Zugangsdaten, Schlüssel, Zertifikate, Backups, Datenbanken
+*.pem
+*.key
+*.crt
+*.p12
+*token*
+*.tar
+*.tar.gz
+*.db
+*.sqlite
+backups/
+
+# Betriebssystem-Dateien
+.DS_Store
+._*
+Thumbs.db

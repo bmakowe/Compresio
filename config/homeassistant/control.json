@@ -1,0 +1,295 @@
+{
+ "helpers": {
+  "input_boolean": [
+   {
+    "name": "Kompressor Freigabe-Testausgang",
+    "icon": "mdi:electric-switch",
+    "id_hint": "kompressor_freigabe_testausgang"
+   }
+  ],
+  "input_text": [
+   {
+    "name": "Kompressor Freigabe-Ausgang",
+    "icon": "mdi:electric-switch-closed",
+    "min": 0,
+    "max": 100,
+    "mode": "text",
+    "initial": "input_boolean.kompressor_freigabe_testausgang",
+    "id_hint": "kompressor_freigabe_ausgang"
+   }
+  ]
+ },
+ "scripts": {
+  "kompressor_freigabe_erteilen": {
+   "alias": "Kompressor: Betriebsfreigabe erteilen",
+   "icon": "mdi:power-plug",
+   "description": "Schaltet den Freigabe-Ausgang ein (Hilfsschütz → Freigabekontakt im Steuerstromkreis). Gesperrt bei aktiver Störung oder nicht erreichbarem Ausgang. Prüft die Rückmeldung des Ausgangs.",
+   "mode": "single",
+   "sequence": [
+    {
+     "variables": {
+      "ausgang": "{{ states('input_text.kompressor_freigabe_ausgang') | trim }}",
+      "aktion": "freigabe"
+     }
+    },
+    {
+     "if": [
+      {
+       "condition": "template",
+       "value_template": "{{ not (ausgang | length > 3 and '.' in ausgang and states(ausgang) not in ['unavailable', 'unknown']) }}"
+      }
+     ],
+     "then": [
+      {
+       "action": "persistent_notification.create",
+       "data": {
+        "notification_id": "kompressor_freigabe",
+        "title": "Kompressor: Freigabe nicht möglich",
+        "message": "Freigabe-Ausgang „{{ ausgang }}“ ist nicht konfiguriert oder nicht erreichbar."
+       }
+      },
+      {
+       "stop": "Ausgang nicht verfügbar",
+       "error": true
+      }
+     ]
+    },
+    {
+     "if": [
+      {
+       "condition": "state",
+       "entity_id": "sensor.kompressor_status",
+       "state": "stoerung"
+      }
+     ],
+     "then": [
+      {
+       "action": "persistent_notification.create",
+       "data": {
+        "notification_id": "kompressor_freigabe",
+        "title": "Kompressor: Freigabe gesperrt",
+        "message": "Es ist eine Störung aktiv. Bitte Ursache vor Ort prüfen; die Freigabe ist erst nach Behebung möglich."
+       }
+      },
+      {
+       "stop": "Störung aktiv",
+       "error": true
+      }
+     ]
+    },
+    {
+     "action": "homeassistant.turn_on",
+     "target": {
+      "entity_id": "{{ ausgang }}"
+     }
+    },
+    {
+     "wait_template": "{{ is_state(ausgang, 'on') }}",
+     "timeout": "00:00:10",
+     "continue_on_timeout": true
+    },
+    {
+     "if": [
+      {
+       "condition": "template",
+       "value_template": "{{ not is_state(ausgang, 'on') }}"
+      }
+     ],
+     "then": [
+      {
+       "action": "persistent_notification.create",
+       "data": {
+        "notification_id": "kompressor_freigabe",
+        "title": "Kompressor: Ausgang reagiert nicht",
+        "message": "„{{ ausgang }}“ hat nach 10 s nicht eingeschaltet. Freigabe NICHT erteilt."
+       }
+      },
+      {
+       "variables": {
+        "aktion": "freigabe_fehlgeschlagen"
+       }
+      }
+     ]
+    },
+    {
+     "action": "mqtt.publish",
+     "data": {
+      "topic": "kompressor/control/release",
+      "retain": true,
+      "payload": "{{ {'zustand': states(ausgang), 'ausgang': ausgang, 'aktion': aktion, 'zeit': now().isoformat()} | to_json }}"
+     }
+    },
+    {
+     "action": "persistent_notification.dismiss",
+     "data": {
+      "notification_id": "kompressor_freigabe"
+     }
+    }
+   ]
+  },
+  "kompressor_freigabe_entziehen": {
+   "alias": "Kompressor: Betriebsfreigabe entziehen",
+   "icon": "mdi:power-plug-off",
+   "description": "Schaltet den Freigabe-Ausgang aus. Immer erlaubt. Ersetzt NICHT den NOT-HALT an der Maschine.",
+   "mode": "queued",
+   "sequence": [
+    {
+     "variables": {
+      "ausgang": "{{ states('input_text.kompressor_freigabe_ausgang') | trim }}",
+      "aktion": "sperre"
+     }
+    },
+    {
+     "action": "homeassistant.turn_off",
+     "target": {
+      "entity_id": "{{ ausgang }}"
+     },
+     "continue_on_error": true
+    },
+    {
+     "wait_template": "{{ is_state(ausgang, 'off') }}",
+     "timeout": "00:00:10",
+     "continue_on_timeout": true
+    },
+    {
+     "if": [
+      {
+       "condition": "template",
+       "value_template": "{{ not is_state(ausgang, 'off') }}"
+      }
+     ],
+     "then": [
+      {
+       "action": "persistent_notification.create",
+       "data": {
+        "notification_id": "kompressor_freigabe",
+        "title": "Kompressor: Sperren fehlgeschlagen!",
+        "message": "„{{ ausgang }}“ hat nach 10 s nicht ausgeschaltet. Maschine vor Ort stoppen (Stopp/NOT-HALT)!"
+       }
+      },
+      {
+       "variables": {
+        "aktion": "sperre_fehlgeschlagen"
+       }
+      }
+     ]
+    },
+    {
+     "action": "mqtt.publish",
+     "data": {
+      "topic": "kompressor/control/release",
+      "retain": true,
+      "payload": "{{ {'zustand': states(ausgang), 'ausgang': ausgang, 'aktion': aktion, 'zeit': now().isoformat()} | to_json }}"
+     }
+    }
+   ]
+  }
+ },
+ "automations": {
+  "kompressor_freigabe_melden": {
+   "alias": "Kompressor: Freigabe-Zustand melden",
+   "description": "Meldet jede Änderung des Freigabe-Ausgangs (auch vor Ort/über die App geschaltet) an Node-RED: Protokoll und Simulation.",
+   "mode": "queued",
+   "max": 10,
+   "triggers": [
+    {
+     "trigger": "template",
+     "value_template": "{{ is_state(states('input_text.kompressor_freigabe_ausgang') | trim, 'on') }}",
+     "id": "ein"
+    },
+    {
+     "trigger": "template",
+     "value_template": "{{ is_state(states('input_text.kompressor_freigabe_ausgang') | trim, 'off') }}",
+     "id": "aus"
+    },
+    {
+     "trigger": "state",
+     "entity_id": "input_text.kompressor_freigabe_ausgang",
+     "id": "ausgang_geaendert"
+    },
+    {
+     "trigger": "homeassistant",
+     "event": "start",
+     "id": "start"
+    }
+   ],
+   "actions": [
+    {
+     "variables": {
+      "ausgang": "{{ states('input_text.kompressor_freigabe_ausgang') | trim }}",
+      "aktion": "{{ 'zustand_' ~ trigger.id }}"
+     }
+    },
+    {
+     "action": "mqtt.publish",
+     "data": {
+      "topic": "kompressor/control/release",
+      "retain": true,
+      "payload": "{{ {'zustand': states(ausgang), 'ausgang': ausgang, 'aktion': aktion, 'zeit': now().isoformat()} | to_json }}"
+     }
+    }
+   ]
+  },
+  "kompressor_lauf_ohne_freigabe": {
+   "alias": "Kompressor: Motor läuft ohne Freigabe",
+   "description": "Warnt, wenn der Motor länger als 30 s läuft, obwohl der Freigabe-Ausgang aus ist (Verdrahtung/Ausgang prüfen).",
+   "mode": "single",
+   "triggers": [
+    {
+     "trigger": "state",
+     "entity_id": "binary_sensor.kompressor_motor",
+     "to": "on",
+     "for": "00:00:30"
+    }
+   ],
+   "conditions": [
+    {
+     "condition": "template",
+     "value_template": "{{ is_state(states('input_text.kompressor_freigabe_ausgang') | trim, 'off') }}"
+    }
+   ],
+   "actions": [
+    {
+     "action": "persistent_notification.create",
+     "data": {
+      "notification_id": "kompressor_lauf_ohne_freigabe",
+      "title": "Kompressor: Motor läuft ohne Freigabe",
+      "message": "Der Motor läuft, obwohl die Betriebsfreigabe aus ist. Verdrahtung des Hilfsschützes und Ausgang prüfen."
+     }
+    }
+   ]
+  },
+  "kompressor_freigabe_bei_stoerung_entziehen": {
+   "alias": "Kompressor: Freigabe bei Störung entziehen (erst nach Validierung aktivieren)",
+   "description": "DEAKTIVIERT angelegt: Die Störschwellen sind noch TEST-Werte. Nach Validierung der Grenzwerte aktivieren – dann wird bei jeder Störung (≥ 10 s) die Freigabe entzogen.",
+   "mode": "single",
+   "triggers": [
+    {
+     "trigger": "state",
+     "entity_id": "sensor.kompressor_status",
+     "to": "stoerung",
+     "for": "00:00:10"
+    }
+   ],
+   "conditions": [
+    {
+     "condition": "template",
+     "value_template": "{{ is_state(states('input_text.kompressor_freigabe_ausgang') | trim, 'on') }}"
+    }
+   ],
+   "actions": [
+    {
+     "action": "script.kompressor_freigabe_entziehen"
+    },
+    {
+     "action": "persistent_notification.create",
+     "data": {
+      "notification_id": "kompressor_freigabe",
+      "title": "Kompressor: Freigabe wegen Störung entzogen",
+      "message": "{{ state_attr('sensor.kompressor_meldungen', 'text') }}"
+     }
+    }
+   ]
+  }
+ }
+}

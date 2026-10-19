@@ -1,0 +1,58 @@
+LIZENZSTATUS – NOCH NICHT FESTGELEGT / LICENSE STATUS – NOT YET DETERMINED
+==========================================================================
+
+Copyright (c) 2026 Björn Makowe
+
+DEUTSCH
+
+Für dieses Repository ist noch keine Lizenz erteilt. Bis zur abschließenden
+Lizenzentscheidung und rechtlichen Prüfung (siehe docs/legal-review.md) gilt:
+Alle Rechte vorbehalten. Ohne ausdrückliche Erlaubnis des Rechteinhabers ist
+keine Nutzung, Vervielfältigung, Veränderung oder Weitergabe gestattet.
+Rechte an Fremdkomponenten bleiben davon unberührt (siehe
+THIRD_PARTY_LICENSES.md).
+
+Vorgesehen ist ein Dual-Licensing-Modell („Source Available“, nicht
+„Open Source“ im Sinne der OSI):
+
+  1. Community-Lizenz (in Ausarbeitung, siehe docs/licensing.md):
+     – kostenlos für jeden eingetragenen Verein (e.V.) für seinen eigenen
+       Vereinsbetrieb, auch wenn er einer Tauchschule angegliedert ist
+     – kostenlos für Privatpersonen zur privaten Nutzung
+     – nicht für nicht eingetragene Vereine und gewerbliche Nutzer;
+       ebenfalls nicht zulässig ist der Betrieb durch oder für eine
+       Tauchschule bzw. ein Unternehmen über einen Verein (verdeckte
+       gewerbliche Nutzung).
+  2. Kommerzielle Lizenz: gesonderter Vertrag mit dem Rechteinhaber
+     (siehe LICENSE-COMMERCIAL.md). Auch die rein interne Nutzung durch
+     gewerbliche Unternehmen ist lizenzpflichtig.
+
+Sobald der Text der Community-Lizenz rechtlich geprüft ist, wird diese
+Datei durch den endgültigen Lizenztext ersetzt. Anfragen: über GitHub
+(Issue „Lizenzanfrage“ im Repository bmakowe/compresio).
+
+ENGLISH
+
+No license has been granted for this repository yet. Until the license
+decision and legal review are completed (see docs/legal-review.md):
+All rights reserved. No use, reproduction, modification or distribution is
+permitted without the express permission of the copyright holder. Rights in
+third-party components remain unaffected (see THIRD_PARTY_LICENSES.md).
+
+Planned dual-licensing model ("source available", not "open source" as
+defined by the OSI):
+
+  1. Community license (being drafted, see docs/licensing.md):
+     – free for any registered association under German law ("e.V.") for
+       its own association activities, even if attached to a dive school
+     – free for individuals for private use
+     – not for unregistered associations or commercial users; operation by
+       or for a dive school or company through an association (concealed
+       commercial use) is not permitted either.
+  2. Commercial license: separate agreement with the copyright holder
+     (see LICENSE-COMMERCIAL.md). Internal use by commercial entities also
+     requires a commercial license.
+
+This file will be replaced by the final license text once the community
+license has been legally reviewed. Contact: via GitHub ("license request"
+issue in the repository bmakowe/compresio).

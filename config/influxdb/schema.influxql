@@ -1,0 +1,33 @@
+-- Compresio – InfluxDB 1.x Schema (idempotent ausführbar)
+-- Ausführen: python tools/setup_influx.py   (setzt Passwörter aus .env ein)
+
+CREATE DATABASE "kompressor"
+
+-- Rohdaten: 30 Tage, Standard-RP (Node-RED schreibt hierhin)
+CREATE RETENTION POLICY "raw"     ON "kompressor" DURATION 30d  REPLICATION 1 SHARD DURATION 1d DEFAULT
+-- Minutenaggregate: 1 Jahr
+CREATE RETENTION POLICY "agg_1m"  ON "kompressor" DURATION 365d REPLICATION 1 SHARD DURATION 7d
+-- 15-Minuten-Aggregate: unbegrenzt
+CREATE RETENTION POLICY "agg_15m" ON "kompressor" DURATION INF  REPLICATION 1 SHARD DURATION 26w
+-- Ereignisse (Starts/Stopps, Warnungen, Wartungen): unbegrenzt, geringe Datenmenge
+CREATE RETENTION POLICY "events"  ON "kompressor" DURATION INF  REPLICATION 1 SHARD DURATION 26w
+
+-- Die automatisch angelegte RP "autogen" (unbegrenzt) entfernen, damit nichts unbegrenzt gespeichert wird
+DROP RETENTION POLICY "autogen" ON "kompressor"
+
+-- Downsampling. Nur numerische Measurements (sensor, state, counter, system).
+-- RESAMPLE FOR fängt verspätet eintreffende Punkte (z. B. nach Verbindungsabbruch) ab.
+CREATE CONTINUOUS QUERY "cq_1m" ON "kompressor" RESAMPLE EVERY 1m FOR 10m BEGIN
+  SELECT mean(*), min(*), max(*), count(*) INTO "kompressor"."agg_1m".:MEASUREMENT
+  FROM "kompressor"."raw"./^(sensor|state|counter|system)$/ GROUP BY time(1m), *
+END
+CREATE CONTINUOUS QUERY "cq_15m" ON "kompressor" RESAMPLE EVERY 15m FOR 2h BEGIN
+  SELECT mean(*), min(*), max(*), count(*) INTO "kompressor"."agg_15m".:MEASUREMENT
+  FROM "kompressor"."raw"./^(sensor|state|counter|system)$/ GROUP BY time(15m), *
+END
+
+-- Benutzer (Passwörter werden beim Ausführen aus .env eingesetzt)
+CREATE USER "kompressor-nodered" WITH PASSWORD '${INFLUX_NODERED_PASSWORD}'
+GRANT ALL ON "kompressor" TO "kompressor-nodered"
+CREATE USER "kompressor-grafana" WITH PASSWORD '${INFLUX_GRAFANA_PASSWORD}'
+GRANT READ ON "kompressor" TO "kompressor-grafana"

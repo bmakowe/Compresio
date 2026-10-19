@@ -1,0 +1,5 @@
+blank_issues_enabled: true
+contact_links:
+  - name: Sicherheitslücke melden / Report a vulnerability
+    url: https://github.com/bmakowe/compresio/security/advisories/new
+    about: Vertraulich über GitHub Private Vulnerability Reporting – bitte nicht als öffentliches Issue.
