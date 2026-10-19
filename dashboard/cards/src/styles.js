@@ -130,6 +130,7 @@ h3.ct { margin: 0 0 6px; font-size: 16.5px; font-weight: 600; }
 .ov-main .kpi-release { grid-column: span 2; } .ov-main .kpi-alerts { grid-column: span 1; }
 /* mit Speicherkaskade: Druckanstieg und Kaskade teilen sich die zwei Spalten */
 .ov-main .has-casc .kpi-rate, .ov-main .kpi-cascade { grid-column: span 1; }
+.ov-main .gauges-8 > .gauge { grid-column: span var(--gs, 1); }   /* Breite in ganzen Spalten (8er-Raster) */
 .mid { display: grid; margin-bottom: var(--t-gap); grid-template-rows: repeat(4, minmax(0, 1fr)); }   /* 4 gleich hohe Zeilen */
 .mid > .card { min-width: 0; min-height: 0; }
 .m-vis   { grid-column: 1 / 5; grid-row: 1 / span 4; }
@@ -267,6 +268,7 @@ tr.clickable:hover td { background: var(--t-card-hover); }
   .ov-main .kpi-status { grid-column: span 2; } .ov-main .kpi-pressure, .ov-main .kpi-rate { grid-column: span 1; }
   .ov-main .kpi-release, .ov-main .kpi-alerts { grid-column: span 2; }
   .ov-main .has-casc .kpi-alerts { grid-column: span 1; }
+  .ov-main .gauges-8 > .gauge { grid-column: span 1; }
   .m-vis { grid-column: 1 / 3; } .m-motor, .m-run, .m-room { grid-column: 3 / 4; }
   .m-c1, .m-c2, .m-c3, .m-c4 { grid-column: 4 / 5; }
   .hdr { grid-template-columns: auto 1fr; }

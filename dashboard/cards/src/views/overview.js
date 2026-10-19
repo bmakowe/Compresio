@@ -6,7 +6,13 @@ import { compressorSVG, setCascadeGauge } from '../components/compressor.js';
 import { fetchHistory } from '../data.js';
 import { Chart } from '../components/chart.js';
 
-const GAUGES = ['p_suction', 'p_stage1', 'p_stage2', 'p_final', 't1', 't2', 't3', 'current'];
+// Instrumentenreihe: nur vorhandene Messstellen in dieser Reihenfolge, höchstens 8 (eine Rasterzeile).
+// Weniger als 8 → Instrumente auf ganze Spalten verbreitert, damit alle Kanten im gemeinsamen Raster bleiben.
+const GAUGE_ORDER = ['p_suction', 'p_stage1', 'p_stage2', 'p_final', 'p_cascade', 't1', 't2', 't3', 't12', 't23', 'tr', 'current', 'voltage'];
+function gaugeLayout(cfg) {
+  const keys = GAUGE_ORDER.filter((k) => cfg.entities[k] && cfg.gauges[k]).slice(0, 8), n = keys.length;
+  return keys.map((k, i) => [k, n ? Math.floor(8 / n) + (i < 8 % n ? 1 : 0) : 1]);
+}
 const CAT_SHORT = { 'Nicht festgelegt': 'Offen', 'Nicht erreichbar': 'Offline', 'Unvollständig': 'Lücken', 'Keine Daten': 'k. Daten' };
 const CATS = [['comm', 'mdi:wifi'], ['sensor_data', 'mdi:database-outline'], ['temperature', 'mdi:thermometer'], ['pressure', 'mdi:gauge'],
               ['maintenance', 'mdi:wrench'], ['database', 'mdi:layers-triple']];
@@ -16,9 +22,10 @@ export class OverviewView {
 
   render() {
     const cfg = this.app.cfg;
-    const g = (k) => {
-      const gc = cfg.gauges[k], missing = !cfg.entities[k];
-      return `<div class="card gauge ${missing ? 'missing' : 'clickable'}" data-gauge="${k}" ${missing ? '' : `data-more="${k}"`}>
+    this.gauges = gaugeLayout(cfg);
+    const g = ([k, span]) => {
+      const gc = cfg.gauges[k];
+      return `<div class="card gauge clickable" data-gauge="${k}" data-more="${k}" style="--gs: ${span}">
         <div class="gl">${esc(gc.label)}</div>${gaugeSVG(gc)}
 </div>`;
     };
@@ -85,8 +92,8 @@ export class OverviewView {
       ${mini('source', 'mdi:database', 'Datenquelle', 'dq', 'm-c4')}
     </div>
 
-    <div class="gauges gauges-8">${GAUGES.map(g).join('')}</div>
-    <div class="tiny" style="margin: -5px 4px 3px; text-align: right">${esc(cfg.scale_note)}. Farbmarken: TEST-Schwellen aus Node-RED.</div>
+    ${this.gauges.length ? `<div class="gauges gauges-8">${this.gauges.map(g).join('')}</div>
+    <div class="tiny" style="margin: -5px 4px 3px; text-align: right">${esc(cfg.scale_note)}. Farbmarken: TEST-Schwellen aus Node-RED.</div>` : ''}
 
     <div class="card statusbar">
       ${CATS.map(([c, i]) => `<div class="sb" data-cat="${c}" data-nav="ereignisse"><ha-icon icon="${i}"></ha-icon>
@@ -280,9 +287,8 @@ export class OverviewView {
     set('fs-s', `seit Wechsel ${fmt(num(hass, E.hours_since_filter), 1)} h`);
 
     // Instrumente
-    for (const k of GAUGES) {
+    for (const [k] of this.gauges) {
       const el = this.root.querySelector(`[data-gauge="${k}"]`), gc = cfg.gauges[k];
-      if (!E[k]) { updateGauge(el, gc, null, 'na', 'Kein Sensor'); continue; }
       const v = num(hass, E[k]); const lvl = measureLevel(hass, cfg, k);
       updateGauge(el, gc, v, v === null ? 'na' : lvl, v === null ? 'Keine Daten' : `${fmt(v, gc.dec)} ${gc.unit}`);
       el.classList.toggle('nodata', v === null);
