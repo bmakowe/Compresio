@@ -12,12 +12,13 @@ export const SENSOR_ID = {
   current: 'motor_current', voltage: 'supply_voltage',
 };
 // Abhängige Werte: entfallen, wenn eine der Messstellen nicht vorhanden ist
-const DEPENDS = { dt1: ['t1', 'tr'], dt2: ['t2', 'tr'], dt3: ['t3', 'tr'], dt12: ['t12', 'tr'], dt23: ['t23', 'tr'], p_rate: ['p_final'], cascade_nominal: ['p_cascade'] };
+const DEPENDS = { dt1: ['t1', 'tr'], dt2: ['t2', 'tr'], dt3: ['t3', 'tr'], dt12: ['t12', 'tr'], dt23: ['t23', 'tr'], p_rate: ['p_final'], cascade_nominal: ['p_cascade'], cascade_bottles: ['p_cascade'] };
 
 export const DEFAULT_CONFIG = {
   title: 'Compresio',
   subtitle: 'Smart Compressor Monitoring & Diagnostics',
-  compressor_label: 'KOMPRESSOR',   // Aufschrift in der schematischen Darstellung (z. B. Hersteller/Typ)
+  compressor_label: 'KOMPRESSOR',
+  cascade_bottles: 3,               // Flaschen der Speicherkaskade in der Grafik; wird aus number.kompressor_kaskade_flaschen übernommen   // Aufschrift in der schematischen Darstellung (z. B. Hersteller/Typ)
   entities: {
     status: `sensor.${E}_status`,
     source: `sensor.${E}_quelle`,
@@ -34,6 +35,7 @@ export const DEFAULT_CONFIG = {
     p_final: `sensor.${E}_enddruck`,
     p_cascade: `sensor.${E}_kaskadendruck`,                        // Speicherkaskade, Gesamtdruck (optional)
     cascade_nominal: `number.${E}_kaskade_nenndruck`,              // Nenndruck der Kaskade für die Füllstandsanzeige (0 = nicht festgelegt)
+    cascade_bottles: `number.${E}_kaskade_flaschen`,               // Anzahl Flaschen in der Grafik (1–6)
     p_rate: `sensor.${E}_druckanstieg`,
     // Temperaturmessstellen in Verdichtungsfolge: T1 → T12 → T2 → T23 → T3, dazu Raumtemperatur TR
     t1: 'sensor.kompressor_temperatur_stufe_1',              // Zylinder Stufe 1
@@ -141,12 +143,16 @@ export const DEFAULT_CONFIG = {
   },
 };
 
-/** Wendet die Ausstattung an: nicht vorhandene Messstellen (Schalter aus) → Entität null. Liefert {cfg, sig}. */
+/** Wendet die Ausstattung an: nicht vorhandene Messstellen (Schalter aus) → Entität null; Flaschenzahl der Kaskade.
+ *  Liefert {cfg, sig}; ändert sich sig, baut die Oberfläche die Ansicht neu auf. */
 export function applyEquipment(base, hass) {
   const off = Object.keys(base.entities.equipment || {}).filter((k) => base.entities[k] && hass?.states[base.entities.equipment[k]]?.state === 'off');
-  const sig = off.join(',');
-  if (!off.length) return { cfg: base, sig };
+  const nb = Math.round(Number(hass?.states[base.entities.cascade_bottles]?.state));
+  const bottles = nb >= 1 && nb <= 6 ? nb : base.cascade_bottles;
+  const sig = `${off.join(',')}|${bottles}`;
+  if (!off.length && bottles === base.cascade_bottles) return { cfg: base, sig };
   const cfg = structuredClone(base), E = cfg.entities;
+  cfg.cascade_bottles = bottles;
   for (const k of off) { E[k] = null; if (E.sensor_status[k]) E.sensor_status[k] = null; }
   for (const [k, deps] of Object.entries(DEPENDS)) if (deps.some((d) => !E[d])) E[k] = null;
   return { cfg, sig };

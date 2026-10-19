@@ -571,7 +571,7 @@ Die echten Intervalle dürfen erst nach Prüfung der Herstellerunterlagen einget
 - Status: `ok`, `bald_faellig` (≥ 90 %), `faellig`, `nicht_festgelegt`""")
 CFG_RESTORE_JS = r"""
 const key = msg.topic.split('/').pop();
-if (!['interval_h', 'filter_interval_h', 'pressure_setpoint_bar', 'rate_reference_bar_min', 'cascade_nominal_bar'].includes(key)) return null;
+if (!['interval_h', 'filter_interval_h', 'pressure_setpoint_bar', 'rate_reference_bar_min', 'cascade_nominal_bar', 'cascade_bottles'].includes(key)) return null;
 const mc = global.get('maint_cfg') || {};
 const v = Number(msg.payload);
 mc[key] = Number.isFinite(v) && v > 0 ? v : null;
@@ -581,11 +581,11 @@ return null;
 """
 CFG_SET_JS = r"""
 const tp = msg.topic.split('/'); const key = tp[tp.lastIndexOf('config') + 1];   // <präfix>/maintenance/config/<key>/set
-if (!['interval_h', 'filter_interval_h', 'pressure_setpoint_bar', 'rate_reference_bar_min', 'cascade_nominal_bar'].includes(key)) return [null, null];
+if (!['interval_h', 'filter_interval_h', 'pressure_setpoint_bar', 'rate_reference_bar_min', 'cascade_nominal_bar', 'cascade_bottles'].includes(key)) return [null, null];
 const v = Number(msg.payload);
 const val = Number.isFinite(v) && v > 0 ? v : 0;
-const label = { interval_h: 'Wartungsintervall', filter_interval_h: 'Filterwechselintervall', pressure_setpoint_bar: 'Enddruck-Sollwert (Anzeige)', rate_reference_bar_min: 'Referenz Druckanstieg', cascade_nominal_bar: 'Nenndruck Speicherkaskade (Anzeige)' }[key];
-const unit = { interval_h: ' h', filter_interval_h: ' h', pressure_setpoint_bar: ' bar', rate_reference_bar_min: ' bar/min', cascade_nominal_bar: ' bar' }[key];
+const label = { interval_h: 'Wartungsintervall', filter_interval_h: 'Filterwechselintervall', pressure_setpoint_bar: 'Enddruck-Sollwert (Anzeige)', rate_reference_bar_min: 'Referenz Druckanstieg', cascade_nominal_bar: 'Nenndruck Speicherkaskade (Anzeige)', cascade_bottles: 'Flaschen der Speicherkaskade (Anzeige)' }[key];
+const unit = { interval_h: ' h', filter_interval_h: ' h', pressure_setpoint_bar: ' bar', rate_reference_bar_min: ' bar/min', cascade_nominal_bar: ' bar', cascade_bottles: '' }[key];
 return [{ topic: 'kompressor/maintenance/config/' + key, payload: String(val), retain: true },
         { payload: [{ rp: 'events', line: 'events,type=maintenance_config,key=' + key + ' value=' + val + ',text="' + label + ' auf ' + (val ? val + unit : 'nicht festgelegt') + ' gesetzt"' }] }];
 """
@@ -593,8 +593,9 @@ CFG_DEFAULT_JS = r"""
 // Falls noch nie ein Intervall gesetzt wurde: 0 (= nicht festgelegt) publizieren, damit HA einen Zustand hat
 const mc = global.get('maint_cfg') || {};
 const out = [];
-for (const k of ['interval_h', 'filter_interval_h', 'pressure_setpoint_bar', 'rate_reference_bar_min', 'cascade_nominal_bar']) if (mc[k] === undefined) {
-    mc[k] = null; out.push({ topic: 'kompressor/maintenance/config/' + k, payload: '0', retain: true });
+for (const k of ['interval_h', 'filter_interval_h', 'pressure_setpoint_bar', 'rate_reference_bar_min', 'cascade_nominal_bar', 'cascade_bottles']) if (mc[k] === undefined) {
+    const dflt = k === 'cascade_bottles' ? 3 : 0;                 // Kaskade: Voreinstellung 3 Flaschen
+    mc[k] = dflt || null; out.push({ topic: 'kompressor/maintenance/config/' + k, payload: String(dflt), retain: true });
 }
 global.set('maint_cfg', mc);
 return [out];
@@ -1080,6 +1081,9 @@ def build_discovery():
     ent("number", "kaskade_nenndruck", "Nenndruck Speicherkaskade (Anzeige, 0 = nicht festgelegt)",
         state_topic=f"{T}/maintenance/config/cascade_nominal_bar", command_topic=f"{T}/maintenance/config/cascade_nominal_bar/set",
         min=0, max=450, step=1, mode="box", unit_of_measurement="bar", entity_category="config", icon="mdi:propane-tank-outline", retain=False)
+    ent("number", "kaskade_flaschen", "Flaschen der Speicherkaskade (Anzeige)",
+        state_topic=f"{T}/maintenance/config/cascade_bottles", command_topic=f"{T}/maintenance/config/cascade_bottles/set",
+        min=1, max=6, step=1, mode="slider", entity_category="config", icon="mdi:gas-cylinder", retain=False)
     # Temperaturen
     for i in (1, 2, 3):
         ent("sensor", f"temperatur_stufe{i}", f"Zylindertemperatur Stufe {i}", state_topic=f"{T}/temperature/stage{i}",

@@ -33,7 +33,7 @@ Nicht jede Anlage hat alle Sensoren. Unter **System → Ausstattung** wird je Me
 - Voreinstellung: Enddruck, T1–T3, T12, T23, Raum, Motorstrom und Spannung vorhanden; Ansaug-, Zwischendrücke und Speicherkaskade nicht vorhanden.
 - Motorstrom ist die Grundlage für Betriebszustand und Betriebsstunden. Das Dashboard fragt beim Abschalten nach.
 
-**Speicherkaskade** (optional, Gesamtdruck `sensor.kompressor_kaskadendruck`): Ist sie vorhanden, zeigt die Übersicht eine Statuskarte „Speicherkaskade“ (teilt sich die Spalten mit dem Druckanstieg) und drei Flaschen in der Grafik mit Druckwert. Der Füllstand bezieht sich auf den eingetragenen **Nenndruck** (System → Ausstattung, `number.kompressor_kaskade_nenndruck`, 0 = nicht festgelegt). Der Nenndruck ist ein Anzeigewert, keine Betriebsgrenze; Meldungen gibt es nur bei Sensorausfall.
+**Speicherkaskade** (optional, Gesamtdruck `sensor.kompressor_kaskadendruck`): Ist sie vorhanden, zeigt die Übersicht eine Statuskarte „Speicherkaskade“ (teilt sich die Spalten mit dem Druckanstieg) und in der Grafik ein Flaschengestell mit Sammelleitung, Manometer und Druckwert. Die **Anzahl der Flaschen** (1–6, `number.kompressor_kaskade_flaschen`, Voreinstellung 3) wird unter System → Ausstattung gewählt: 1–4 stehen in einer Reihe, bei 5 stehen 3 hinten und 2 davor auf Lücke, bei 6 zwei versetzte Reihen zu je 3. Die Flaschenschulter trägt die Kennfarbe für Atemluft (weiß/schwarz). Füllstand und Manometer beziehen sich auf den eingetragenen **Nenndruck** (`number.kompressor_kaskade_nenndruck`, 0 = nicht festgelegt, dann ohne Zeiger). Der Nenndruck ist ein Anzeigewert, keine Betriebsgrenze; Meldungen gibt es nur bei Sensorausfall.
 
 ## Screenshots
 | Ansicht | |

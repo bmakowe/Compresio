@@ -38,19 +38,52 @@ function coil(x0, x1, y, cls) {
   return s + '</g>';
 }
 
-/** Speicherkaskade: drei Flaschen mit gemeinsamer Füllstandsanzeige (Höhe per JS, siehe setCascadeLevel) */
-function cascade() {
-  const xs = [338, 366, 394], top = 258, bot = 304;
-  const bottle = (x) => `<rect x="${x}" y="${top}" width="22" height="${bot - top}" rx="9"/>`;
+/** Speicherkaskade: 1–6 stehende Flaschen im Gestell mit Sammelleitung und Manometer.
+ *  1–4 in einer Reihe; 5 = 3 hinten + 2 vorn auf Lücke; 6 = 3 hinten + 3 vorn versetzt.
+ *  Schulter in der Kennfarbe für Atemluft (weiß/schwarz). Manometerzeiger per JS (setCascadeGauge). */
+const CW = 20, CH = 56, CCX = 380, MANIFOLD_Y = 231;
+function bottle(x, top, w, h, back) {
+  const m = x + w / 2, k = w / CW;                 // k: Maßstab (hintere Reihe kleiner)
+  return `<g class="bottle${back ? ' back' : ''}">
+    <path d="M ${m + 3.5 * k} ${top - 6 * k} L ${m + 6 * k} ${top - 6 * k} L ${m + 6 * k} ${MANIFOLD_Y}" class="casc-pipe thin"/>
+    <rect x="${x}" y="${top + 6 * k}" width="${w}" height="${h - 6 * k}" rx="${3 * k}" fill="url(#cCyl)"/>
+    <g clip-path="url(#cDome)"><rect x="${x}" y="${top}" width="${w}" height="${9 * k}" fill="#eef1f4"/>
+      <rect x="${x + w * 0.25}" y="${top}" width="${w * 0.25}" height="${9 * k}" fill="#1d2329"/><rect x="${x + w * 0.75}" y="${top}" width="${w * 0.25}" height="${9 * k}" fill="#1d2329"/></g>
+    <rect x="${x + w * 0.2}" y="${top + 11 * k}" width="${2 * k}" height="${h - 16 * k}" rx="1" fill="#fff" opacity=".28"/>
+    <rect x="${m - 2 * k}" y="${top - 3 * k}" width="${4 * k}" height="${4 * k}" fill="#8d99a4"/>
+    <rect x="${m - 3.5 * k}" y="${top - 8 * k}" width="${7 * k}" height="${5.5 * k}" rx="1" fill="url(#cChrome)"/>
+    <rect x="${m - 5 * k}" y="${top - 10.5 * k}" width="${10 * k}" height="${2.4 * k}" rx="1.2" fill="#2b3742"/>
+    <rect x="${x - 0.5}" y="${top + h - 3 * k}" width="${w + 1}" height="${3 * k}" rx="1" fill="#36424d"/></g>`;
+}
+function bottleRow(count, cx, bottom, k, pitch, back) {
+  const w = CW * k, h = CH * k, top = bottom - h;
+  const span = (count - 1) * pitch + w, x0 = cx - span / 2;
+  const xs = Array.from({ length: count }, (_, i) => x0 + i * pitch);
+  const strap = `<rect x="${x0 - 3}" y="${(top + h * 0.5).toFixed(1)}" width="${span + 6}" height="${2.2 * k}" rx="1" class="casc-strap"/>`;
+  const posts = [x0 - 5, x0 + span + 2].map((px) => `<rect x="${px}" y="${top + 14 * k}" width="${3 * k}" height="${h - 14 * k}" class="casc-strap"/>`).join('');
+  return { svg: `<g class="casc-row${back ? ' back' : ''}">${posts}${xs.map((x) => bottle(x, top, w, h, back)).join('')}${strap}</g>`, left: x0 - 5 };
+}
+function cascade(n) {
+  n = Math.max(1, Math.min(6, Math.round(n) || 3));
+  // 1–4: eine Reihe; 5/6: hintere Reihe höher und kleiner (Tiefe), vordere auf Lücke
+  const rows = n <= 4 ? [bottleRow(n, CCX, 306, 1, 25, false)]
+    : [bottleRow(3, n === 6 ? CCX - 5.5 : CCX, 289, 0.78, 22, true), bottleRow(n - 3, n === 6 ? CCX + 5.5 : CCX, 306, 0.86, 22, false)];
+  const left = Math.min(...rows.map((r) => r.left)), gx = left - 9;
   return `<g class="casc">
-    <clipPath id="cCasc">${xs.map(bottle).join('')}</clipPath>
-    <path d="M 438 250 L 349 250" class="casc-pipe"/>${xs.map((x) => `<path d="M ${x + 11} 250 L ${x + 11} ${top}" class="casc-pipe"/>`).join('')}
-    <g class="casc-shell">${xs.map(bottle).join('')}</g>
-    <rect class="casc-fill" x="338" y="${bot}" width="78" height="0" clip-path="url(#cCasc)"/>
-    ${xs.map((x) => `<rect x="${x + 7}" y="246" width="8" height="8" rx="2" class="casc-valve"/>`).join('')}
+    <path d="M ${gx} ${MANIFOLD_Y} L 438 ${MANIFOLD_Y}" class="casc-pipe"/>
+    ${rows.map((r) => r.svg).join('')}
+    <g class="casc-gauge" transform="translate(${gx} ${MANIFOLD_Y})"><circle r="8.5" fill="#e9eef2" stroke="#7d8a95" stroke-width="1.6"/>
+      <path d="M -5.2 3.6 A 6.3 6.3 0 1 1 5.2 3.6" fill="none" stroke="#9aa6b1" stroke-width="1"/>
+      <line class="casc-needle" x1="0" y1="0" x2="0" y2="-6" stroke="#ef5350" stroke-width="1.4" stroke-linecap="round" transform="rotate(-120)"/>
+      <circle r="1.4" fill="#29323a"/></g>
   </g>`;
 }
-export const CASCADE_BOX = { top: 258, bottom: 304 };
+/** Manometer der Kaskade: Anteil 0–1 vom Nenndruck; null = Zeiger ausblenden */
+export function setCascadeGauge(svg, frac) {
+  const n = svg.querySelector('.casc-needle'); if (!n) return;
+  n.style.display = frac === null ? 'none' : '';
+  if (frac !== null) n.setAttribute('transform', `rotate(${(-120 + 240 * frac).toFixed(1)})`);
+}
 
 export function compressorSVG(imageUrl, label = 'KOMPRESSOR', opts = {}) {
   const [h1x, h1y] = head(210, 112), [h2x, h2y] = head(270, 112), [h3x, h3y] = head(330, 112);
@@ -111,6 +144,9 @@ export function compressorSVG(imageUrl, label = 'KOMPRESSOR', opts = {}) {
     <linearGradient id="cSteel" x1="0" x2="1"><stop offset="0" stop-color="#5d6b78"/><stop offset=".45" stop-color="#d6dde3"/><stop offset="1" stop-color="#6c7a87"/></linearGradient>
     <linearGradient id="cPanel" x1="0" x2="0" y1="0" y2="1"><stop offset="0" stop-color="#d9e0e6"/><stop offset="1" stop-color="#9aa6b1"/></linearGradient>
     <linearGradient id="cTower" x1="0" x2="1"><stop offset="0" stop-color="#0f4f99"/><stop offset=".5" stop-color="#2f8be8"/><stop offset="1" stop-color="#0e3f7c"/></linearGradient>
+    <linearGradient id="cCyl" x1="0" x2="1"><stop offset="0" stop-color="#3e4a55"/><stop offset=".32" stop-color="#b9c4cd"/><stop offset=".55" stop-color="#7f8c98"/><stop offset="1" stop-color="#35414c"/></linearGradient>
+    <linearGradient id="cChrome" x1="0" x2="0" y1="0" y2="1"><stop offset="0" stop-color="#f1f4f6"/><stop offset="1" stop-color="#8e99a3"/></linearGradient>
+    <clipPath id="cDome" clipPathUnits="objectBoundingBox"><path d="M 0 1 C 0 .25 .16 0 .5 0 C .84 0 1 .25 1 1 Z"/></clipPath>
     <linearGradient id="cCopper" x1="0" x2="0" y1="0" y2="1"><stop offset="0" stop-color="#f0c9a0"/><stop offset=".5" stop-color="#c47a45"/><stop offset="1" stop-color="#7d4423"/></linearGradient>
     <radialGradient id="cShadow" cx=".5" cy=".5" r=".5"><stop offset="0" stop-color="#000" stop-opacity=".55"/><stop offset="1" stop-color="#000" stop-opacity="0"/></radialGradient>
     <marker id="cArrow" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="5" markerHeight="5" orient="auto-start-reverse"><path d="M 0 0 L 10 5 L 0 10 z" fill="#55b5ff"/></marker>
@@ -133,7 +169,7 @@ export function compressorSVG(imageUrl, label = 'KOMPRESSOR', opts = {}) {
   <g class="room" data-key="tr" transform="translate(430 14)"><rect width="86" height="42" rx="7"/>
     <text x="9" y="16" class="cl-k">TR Raum</text><text x="9" y="35" class="cl-v" data-v="tr">–</text></g>
   ${call('motor', 'Motor', 14, 300, 86, 'small')}
-  ${opts.cascade ? cascade() + call('p_cascade', 'Kaskade', 342, 196, 86, 'small') : ''}
+  ${opts.cascade ? cascade(opts.bottles) + call('p_cascade', 'Kaskade', 352, 186, 86, 'small') : ''}
 </svg>`;
 }
 
@@ -155,10 +191,10 @@ export const COMPRESSOR_CSS = `
 .cmp .room.na .cl-v { fill: #8a9caa; }
 .cmp .leaders path { stroke: #20d978; } .cmp .leaders path.na { stroke: #6f8496; } .cmp .leaders path.warn { stroke: #f2b544; } .cmp .leaders path.crit { stroke: #ef5350; }
 .cmp .leaders path.ld-p_final { stroke: #55b5ff; }
-.cmp .casc-pipe { stroke: #a7b3bd; stroke-width: 4; fill: none; stroke-linecap: round; }
-.cmp .casc-shell rect { fill: #24384a; stroke: #8b98a3; stroke-width: 1.5; }
-.cmp .casc-fill { fill: #b388ff; opacity: .55; }
-.cmp .casc-valve { fill: #c9d3dc; }
+.cmp .casc-pipe { stroke: #a7b3bd; stroke-width: 3.5; fill: none; stroke-linecap: round; stroke-linejoin: round; }
+.cmp .casc-pipe.thin { stroke-width: 2; }
+.cmp .casc-strap { fill: #4b5763; }
+.cmp .casc-row.back { filter: brightness(.72); }
 .cmp .flow { opacity: 0; }
 .cmp.running .flow { opacity: .9; animation: flow 1s linear infinite; }
 .cmp .fan-blades { transform-origin: 72px 254px; transform-box: view-box; }

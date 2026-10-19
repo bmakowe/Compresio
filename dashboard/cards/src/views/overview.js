@@ -2,7 +2,7 @@
 import { st, avail, num, fmt, fmtHours, fmtMinutes, esc, moreInfo, MAINT_TEXT, MAINT_LEVEL } from '../util.js';
 import { compressorState, measureLevel, categoryState, CAT_LABEL, sourceState, activeAlerts } from '../logic.js';
 import { gaugeSVG, updateGauge } from '../components/gauge.js';
-import { compressorSVG, CASCADE_BOX } from '../components/compressor.js';
+import { compressorSVG, setCascadeGauge } from '../components/compressor.js';
 import { fetchHistory } from '../data.js';
 import { Chart } from '../components/chart.js';
 
@@ -60,7 +60,7 @@ export class OverviewView {
 
     <!-- Mittlerer Bereich: EIN Raster (3 Spalten × 4 gleich hohe Zeilen), alle Karten explizit platziert -->
     <div class="mid">
-      <div class="card vis m-vis"><div class="vis-box">${compressorSVG(cfg.compressor_image, cfg.compressor_label, { cascade: casc })}</div>
+      <div class="card vis m-vis"><div class="vis-box">${compressorSVG(cfg.compressor_image, cfg.compressor_label, { cascade: casc, bottles: cfg.cascade_bottles })}</div>
         <div class="note">${cfg.compressor_image ? 'Foto' : 'Schematische Darstellung – Bauteilanordnung nicht am realen Gerät verifiziert'}</div></div>
       <div class="card list m-motor">
         ${li('motor', 'mdi:engine', 'Motor', 'mo')}
@@ -235,8 +235,7 @@ export class OverviewView {
       const txt = kc === null ? '– – –' : `${fmt(kc, 0)} bar`;
       if (cv.textContent !== txt) cv.textContent = txt;
       call.setAttribute('class', `callout small ${kc === null ? 'na' : lvl === 'ok' ? '' : lvl}`);
-      const h = (CASCADE_BOX.bottom - CASCADE_BOX.top) * (frac ?? 0), fill = svg.querySelector('.casc-fill');
-      fill.setAttribute('y', CASCADE_BOX.bottom - h); fill.setAttribute('height', h);
+      setCascadeGauge(svg, frac);
     }
 
     // Raumtemperatur (außerhalb der Maschine)

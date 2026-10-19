@@ -25,7 +25,7 @@ Einspielen: `python tools/build_ha.py`.
 | Temperatur | `sensor.kompressor_temperatur_stufe_1/_2/_3` (Zylinder), `sensor.kompressor_temperatur_kuehlspirale_1_2/_2_3`, `sensor.kompressor_raumtemperatur` |
 | Temperaturdifferenzen | `sensor.kompressor_delta_t1/_t2/_t3/_t12/_t23` (Template-Helfer, °C, ohne device_class; `tools/setup_templates.py`) |
 | Ereignisse | `event.kompressor_ereignis` (Motorstart/-stopp mit Zykluskennwerten, Meldungen, Wartung …) |
-| Konfiguration | `number.kompressor_enddruck_soll`, `number.kompressor_druckanstieg_referenz`, `number.kompressor_kaskade_nenndruck` (0 = nicht festgelegt) |
+| Konfiguration | `number.kompressor_enddruck_soll`, `number.kompressor_druckanstieg_referenz`, `number.kompressor_kaskade_nenndruck` (0 = nicht festgelegt), `number.kompressor_kaskade_flaschen` (1–6, Grafik) |
 | Ausstattung | `switch.kompressor_ausstattung_<sensor>` je Messstelle (vorhanden ja/nein), bedienbar im Dashboard unter System |
 | Wartung | `_betriebsstunden`, `_stunden_seit_wartung`, `_stunden_seit_filterwechsel`, `_wartung_status`, `_filter_status`, `_rest_bis_wartung`, `_rest_bis_filterwechsel`, `number.…_wartungsintervall`, `number.…_filterintervall`, `button.…_wartung_erfasst`, `button.…_filter_erfasst` |
 | Meldungen | `binary_sensor.kompressor_meldung_{comm,sensor_data,temperature,pressure,maintenance,database}` |
