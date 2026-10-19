@@ -168,7 +168,7 @@ export function compressorSVG(imageUrl, label = 'KOMPRESSOR', opts = {}) {
   ${call('p_final', 'Enddruck', 430, 100, 86, 'small')}
   <g class="room" data-key="tr" transform="translate(430 14)"><rect width="86" height="42" rx="7"/>
     <text x="9" y="16" class="cl-k">TR Raum</text><text x="9" y="35" class="cl-v" data-v="tr">–</text></g>
-  ${call('motor', 'Motor', 14, 300, 86, 'small')}
+  ${call('motor', 'Motor', 14, 288, 86, 'small')}
   ${opts.cascade ? cascade(opts.bottles) + call('p_cascade', 'Kaskade', 352, 186, 86, 'small') : ''}
 </svg>`;
 }

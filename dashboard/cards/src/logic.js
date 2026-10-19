@@ -79,6 +79,7 @@ export function categoryState(hass, cfg, cat) {
       break;
     }
     case 'temperature':
+      if (!['t1', 't12', 't2', 't23', 't3'].some((k) => E[k])) return { level: 'na', text: 'Kein Sensor' };   // Ausstattung: keine Temperaturmessung
       if (!['t1', 't12', 't2', 't23', 't3'].some((k) => avail(hass, E[k]))) return { level: 'na', text: 'Keine Daten' };
       break;
     case 'pressure':

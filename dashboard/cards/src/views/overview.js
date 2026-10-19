@@ -211,6 +211,11 @@ export class OverviewView {
     svg.classList.toggle('running', running && cs.level !== 'na');
     for (const k of ['t1', 't12', 't2', 't23', 't3', 'p_final', 'motor']) {
       const call = svg.querySelector(`.callout[data-key="${k}"]`), v = call.querySelector('.cl-v');
+      const ld = svg.querySelector(`.ld-${k}`);
+      // Nicht vorhandene Messstelle (Ausstattung): Knoten und Verbindungslinie ausblenden; Motorzustand stammt aus dem Motorstrom
+      const absent = k === 'motor' ? !E.current : !E[k];
+      call.style.display = absent ? 'none' : ''; if (ld) ld.style.display = absent ? 'none' : '';
+      if (absent) continue;
       let lvl, txt;
       if (k === 'motor') {
         const m = st(hass, E.motor)?.state;
@@ -222,7 +227,7 @@ export class OverviewView {
       if (lvl === 'missing') txt = 'kein Sensor';
       call.setAttribute('class', `callout ${k === 'p_final' || k === 'motor' ? 'small ' : ''}${lvl === 'ok' ? '' : lvl === 'off' ? 'na' : lvl}`);
       if (v.textContent !== txt) v.textContent = txt;
-      const ld = svg.querySelector(`.ld-${k}`); if (ld) ld.setAttribute('class', `ld-${k} ${lvl === 'ok' ? '' : lvl}`);
+      if (ld) ld.setAttribute('class', `ld-${k} ${lvl === 'ok' ? '' : lvl}`);
     }
 
     // Speicherkaskade (optional): Gesamtdruck, Füllstand bezogen auf den eingetragenen Nenndruck
@@ -241,13 +246,15 @@ export class OverviewView {
     // Raumtemperatur (außerhalb der Maschine)
     const tr = num(hass, E.tr), trLvl = measureLevel(hass, cfg, 'tr');
     const room = svg.querySelector('.room');
+    room.style.display = E.tr ? '' : 'none';
     room.setAttribute('class', `room ${tr === null ? 'na' : ''}`);
     room.querySelector('.cl-v').textContent = tr === null ? (E.tr ? '– – –' : 'kein Sensor') : `${fmt(tr, 1)} °C`;
-    set('tr', tr === null ? 'Keine Daten' : `${fmt(tr, 1)} °C`, `v ${tr === null ? 'c-na' : ''}`);
+    set('tr', !E.tr ? 'Kein Sensor' : tr === null ? 'Keine Daten' : `${fmt(tr, 1)} °C`, `v ${tr === null ? 'c-na' : ''}`);
     const mm = this.roomMinMax && tr !== null ? [Math.min(this.roomMinMax[0], tr), Math.max(this.roomMinMax[1], tr)] : this.roomMinMax;
     set('tr-min', mm ? `${fmt(mm[0], 1)} °C` : '–'); set('tr-max', mm ? `${fmt(mm[1], 1)} °C` : '–');
     const ss = st(hass, E.sensor_status.tr)?.state;
-    set('tr-s', `Sensor ${{ ok: 'OK', keine_daten: 'keine Daten', ungueltig: 'ungültig' }[ss] || 'unbekannt'}${sourceState(hass, cfg).level === 'sim' ? ' · SIMULATION' : ''}`,
+    if (!E.tr) set('tr-s', 'nicht vorhanden (Ausstattung)', 's c-na');
+    else set('tr-s', `Sensor ${{ ok: 'OK', keine_daten: 'keine Daten', ungueltig: 'ungültig' }[ss] || 'unbekannt'}${sourceState(hass, cfg).level === 'sim' ? ' · SIMULATION' : ''}`,
         `s c-${ss === 'ok' ? 'ok' : ss === 'ungueltig' ? 'warn' : 'na'}`);
 
     // Betriebsdaten
