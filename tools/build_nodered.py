@@ -122,6 +122,7 @@ Verarbeitungskette. Vor dem Echtbetrieb anhand der Betriebsanleitung ersetzen.
 
 - `sensors.*.min/max`: Plausibilitätsbereich (Messbereich), nicht Betriebsgrenze
 - `sensors.*.stale_s`: nach dieser Zeit ohne Wert gilt ein Sensor als "keine Daten"
+- `sensors.*.default_on`: Voreinstellung der Ausstattung (vorhanden ja/nein), änderbar in HA bzw. im Dashboard
 - `running`: Motorstrom-Schwellen für die Laufzustandserkennung (mit Hysterese)
 - `alerts`: Warn-/Störschwellen (TEST)""")
 CFG_JS = r"""
@@ -132,7 +133,11 @@ global.set('cfg', {
     version: '%VERSION%',
     thresholds_are_test_values: true,
     sensors: {
+        pressure_suction: { name: 'Ansaugdruck',        unit: 'bar', min: -1,  max: 20,  stale_s: 30, dec: 2, topic: 'pressure/suction', default_on: false },
+        pressure_stage1: { name: 'Zwischendruck Stufe 1', unit: 'bar', min: -1, max: 100, stale_s: 30, dec: 1, topic: 'pressure/stage1', default_on: false },
+        pressure_stage2: { name: 'Zwischendruck Stufe 2', unit: 'bar', min: -1, max: 300, stale_s: 30, dec: 1, topic: 'pressure/stage2', default_on: false },
         pressure_final: { name: 'Enddruck',             unit: 'bar', min: -1,  max: 450, stale_s: 30, dec: 1, topic: 'pressure/final' },
+        pressure_cascade: { name: 'Kaskadendruck',      unit: 'bar', min: -1,  max: 450, stale_s: 60, dec: 1, topic: 'pressure/cascade', default_on: false },
         temp_stage1:    { name: 'Zylindertemperatur Stufe 1', unit: '°C', min: -40, max: 300, stale_s: 30, dec: 1, topic: 'temperature/stage1' },
         temp_coil12:    { name: 'Kühlspirale Stufe 1→2',      unit: '°C', min: -40, max: 300, stale_s: 30, dec: 1, topic: 'temperature/coil12' },
         temp_stage2:    { name: 'Zylindertemperatur Stufe 2', unit: '°C', min: -40, max: 300, stale_s: 30, dec: 1, topic: 'temperature/stage2' },
@@ -161,6 +166,48 @@ return null;
 """.replace("%VERSION%", VERSION)
 f = func(z, "Konfiguration setzen (TEST-Werte)", CFG_JS, 480, 120, [], outputs=0)
 inject(z, "beim Start", 190, 120, [[f]], delay="0.1")
+
+comment(z, "Ausstattung (vorhandene Sensoren)", f"""\
+Je Sensor ein Schalter in HA (`switch.kompressor_ausstattung_<sensor>`), retained unter
+`{T}/equipment/<sensor>` (ON/OFF), Befehl `…/<sensor>/set`. Nicht vorhandene Sensoren
+erzeugen keine Meldungen („liefert keine Daten“), haben den Sensorstatus `nicht_vorhanden`
+und werden nicht simuliert. Voreinstellung: `cfg.sensors.*.default_on`.""", x=170, y=200)
+EQUIP_JS = r"""
+const cfg = global.get('cfg'); if (!cfg) return [null, null];
+const parts = msg.topic.split('/'); const i = parts.lastIndexOf('equipment');
+const sensor = parts[i + 1]; const isSet = parts[i + 2] === 'set';
+const def = cfg.sensors[sensor]; if (!def) return [null, null];
+const on = String(msg.payload).toUpperCase() === 'ON';
+const eq = global.get('equipment') || {};
+const changed = eq[sensor] !== on;
+eq[sensor] = on; global.set('equipment', eq);
+const mq = [], lines = [];
+if (isSet) {
+    mq.push({ topic: 'kompressor/equipment/' + sensor, payload: on ? 'ON' : 'OFF', retain: true });
+    if (changed) lines.push({ rp: 'events', line: 'events,type=maintenance_config,key=equipment_' + sensor + ' value=' + (on ? 1 : 0) +
+                              ',text="Ausstattung: ' + def.name + (on ? ' vorhanden' : ' nicht vorhanden') + '"' });
+}
+node.status({ fill: 'green', shape: 'dot', text: Object.keys(cfg.sensors).filter(k => eq[k] !== false).length + ' von ' + Object.keys(cfg.sensors).length + ' Sensoren vorhanden' });
+return [mq, lines.length ? { payload: lines } : null];
+"""
+EQUIP_DEFAULT_JS = r"""
+// Sensoren ohne gespeicherten Zustand erhalten die Voreinstellung (cfg.sensors.*.default_on)
+const cfg = global.get('cfg'); if (!cfg) return null;
+const eq = global.get('equipment') || {}; const out = [];
+for (const [k, d] of Object.entries(cfg.sensors)) if (eq[k] === undefined) {
+    eq[k] = d.default_on !== false;
+    out.push({ topic: 'kompressor/equipment/' + k, payload: eq[k] ? 'ON' : 'OFF', retain: true });
+}
+global.set('equipment', eq);
+return [out];
+"""
+lo_em = link_out(z, "→ MQTT", 660, 260, [L_MQTT_OUT])
+lo_ed = link_out(z, "→ Datenbank", 660, 300, [L_DB])
+feq = func(z, "Ausstattung", EQUIP_JS, 430, 280, [[lo_em], [lo_ed]])
+mqtt_in(z, "Ausstattung (aus HA)", f"{T}/equipment/#", 180, 280, [[feq]], datatype="utf8")
+lo_em2 = link_out(z, "→ MQTT ", 660, 360, [L_MQTT_OUT])
+fed = func(z, "Voreinstellung", EQUIP_DEFAULT_JS, 430, 360, [[lo_em2]])
+inject(z, "nach 6 s", 180, 360, [[fed]], delay="6")
 
 # ================================================================ 01 MQTT-Eingang
 z = tab("t01", "01 MQTT-Eingang", "Empfang der Rohdaten der Sensorik (bzw. Simulation) und zentraler MQTT-Ausgang.")
@@ -265,7 +312,7 @@ global.set('last_rx', now);
 global.set('source_last', m.src);
 // HA-Aktualisierung drosseln (Recorder-Datenbank schonen): höchstens alle 10 s oder bei deutlicher Änderung.
 // InfluxDB erhält weiterhin jeden Messwert.
-const DEADBAND = { pressure_final: 2, temp_stage1: 1, temp_stage2: 1, temp_stage3: 1, temp_coil12: 1, temp_coil23: 1, temp_room: 0.2, motor_current: 0.5, supply_voltage: 5 };
+const DEADBAND = { pressure_suction: 0.05, pressure_stage1: 0.5, pressure_stage2: 1, pressure_cascade: 2, pressure_final: 2, temp_stage1: 1, temp_stage2: 1, temp_stage3: 1, temp_coil12: 1, temp_coil23: 1, temp_room: 0.2, motor_current: 0.5, supply_voltage: 5 };
 const pub = context.get('pub') || {};
 const lp = pub[m.sensor];
 // Kennwerte des laufenden Betriebszyklus sammeln (für Zyklus-Ereignis und Diagnose)
@@ -524,7 +571,7 @@ Die echten Intervalle dürfen erst nach Prüfung der Herstellerunterlagen einget
 - Status: `ok`, `bald_faellig` (≥ 90 %), `faellig`, `nicht_festgelegt`""")
 CFG_RESTORE_JS = r"""
 const key = msg.topic.split('/').pop();
-if (!['interval_h', 'filter_interval_h', 'pressure_setpoint_bar', 'rate_reference_bar_min'].includes(key)) return null;
+if (!['interval_h', 'filter_interval_h', 'pressure_setpoint_bar', 'rate_reference_bar_min', 'cascade_nominal_bar'].includes(key)) return null;
 const mc = global.get('maint_cfg') || {};
 const v = Number(msg.payload);
 mc[key] = Number.isFinite(v) && v > 0 ? v : null;
@@ -534,11 +581,11 @@ return null;
 """
 CFG_SET_JS = r"""
 const tp = msg.topic.split('/'); const key = tp[tp.lastIndexOf('config') + 1];   // <präfix>/maintenance/config/<key>/set
-if (!['interval_h', 'filter_interval_h', 'pressure_setpoint_bar', 'rate_reference_bar_min'].includes(key)) return [null, null];
+if (!['interval_h', 'filter_interval_h', 'pressure_setpoint_bar', 'rate_reference_bar_min', 'cascade_nominal_bar'].includes(key)) return [null, null];
 const v = Number(msg.payload);
 const val = Number.isFinite(v) && v > 0 ? v : 0;
-const label = { interval_h: 'Wartungsintervall', filter_interval_h: 'Filterwechselintervall', pressure_setpoint_bar: 'Enddruck-Sollwert (Anzeige)', rate_reference_bar_min: 'Referenz Druckanstieg' }[key];
-const unit = { interval_h: ' h', filter_interval_h: ' h', pressure_setpoint_bar: ' bar', rate_reference_bar_min: ' bar/min' }[key];
+const label = { interval_h: 'Wartungsintervall', filter_interval_h: 'Filterwechselintervall', pressure_setpoint_bar: 'Enddruck-Sollwert (Anzeige)', rate_reference_bar_min: 'Referenz Druckanstieg', cascade_nominal_bar: 'Nenndruck Speicherkaskade (Anzeige)' }[key];
+const unit = { interval_h: ' h', filter_interval_h: ' h', pressure_setpoint_bar: ' bar', rate_reference_bar_min: ' bar/min', cascade_nominal_bar: ' bar' }[key];
 return [{ topic: 'kompressor/maintenance/config/' + key, payload: String(val), retain: true },
         { payload: [{ rp: 'events', line: 'events,type=maintenance_config,key=' + key + ' value=' + val + ',text="' + label + ' auf ' + (val ? val + unit : 'nicht festgelegt') + ' gesetzt"' }] }];
 """
@@ -546,7 +593,7 @@ CFG_DEFAULT_JS = r"""
 // Falls noch nie ein Intervall gesetzt wurde: 0 (= nicht festgelegt) publizieren, damit HA einen Zustand hat
 const mc = global.get('maint_cfg') || {};
 const out = [];
-for (const k of ['interval_h', 'filter_interval_h', 'pressure_setpoint_bar', 'rate_reference_bar_min']) if (mc[k] === undefined) {
+for (const k of ['interval_h', 'filter_interval_h', 'pressure_setpoint_bar', 'rate_reference_bar_min', 'cascade_nominal_bar']) if (mc[k] === undefined) {
     mc[k] = null; out.push({ topic: 'kompressor/maintenance/config/' + k, payload: '0', retain: true });
 }
 global.set('maint_cfg', mc);
@@ -662,8 +709,10 @@ const dataFresh = now - lastRx <= cfg.comm_timeout_s * 1000;
 const alerts = [];
 const add = (id, cat, severity, text) => alerts.push({ id: id, cat: cat, severity: severity, text: text });
 const sstat = {};
+const equip = global.get('equipment') || {};
 for (const [s, d] of Object.entries(cfg.sensors)) {
     const l = latest[s], i = inv[s];
+    if (equip[s] === false) { sstat[s] = 'nicht_vorhanden'; continue; }   // Ausstattung: Sensor nicht vorhanden → keine Meldungen
     if (i && now - i.ts <= cfg.invalid_hold_s * 1000) sstat[s] = 'ungueltig';
     else if (l && now - l.rx <= d.stale_s * 1000) sstat[s] = 'ok';
     else sstat[s] = 'keine_daten';
@@ -980,6 +1029,15 @@ Entitäten des Geräts „Kompressor“ per MQTT Discovery an (retained).
 Die Definitionen werden von `tools/build_nodered.py` erzeugt (siehe docs/mqtt.md).""")
 
 
+SENSOR_NAMES = [("pressure_suction", "Ansaugdruck"), ("pressure_stage1", "Zwischendruck Stufe 1"), ("pressure_stage2", "Zwischendruck Stufe 2"),
+                ("pressure_final", "Enddruck"), ("pressure_cascade", "Kaskadendruck"),
+                ("temp_stage1", "Zylinder Stufe 1"), ("temp_coil12", "Kühlspirale 1→2"), ("temp_stage2", "Zylinder Stufe 2"),
+                ("temp_coil23", "Kühlspirale 2→3"), ("temp_stage3", "Zylinder Stufe 3"), ("temp_room", "Raumtemperatur"),
+                ("motor_current", "Motorstrom"), ("supply_voltage", "Versorgungsspannung")]
+SENSOR_TOPIC = {"pressure_suction": "pressure/suction", "pressure_stage1": "pressure/stage1", "pressure_stage2": "pressure/stage2",
+                "pressure_cascade": "pressure/cascade"}
+
+
 def build_discovery():
     dev = {"identifiers": ["kompressor"], "name": "Kompressor", "manufacturer": "Compresio",
            "model": "Atemluftkompressor, dreistufig", "sw_version": f"Compresio-Flows {VERSION}", "suggested_area": "Kompressorraum"}
@@ -1015,6 +1073,13 @@ def build_discovery():
         device_class="pressure", state_class="measurement", suggested_display_precision=1, sensor_avail="pressure_final")
     ent("sensor", "druckanstieg", "Druckanstieg", state_topic=f"{T}/pressure/rate", unit_of_measurement="bar/min",
         state_class="measurement", icon="mdi:trending-up", suggested_display_precision=1, sensor_avail="pressure_final")
+    for obj, name, sid, prec in [("ansaugdruck", "Ansaugdruck", "pressure_suction", 2), ("zwischendruck_stufe_1", "Zwischendruck Stufe 1", "pressure_stage1", 1),
+                                 ("zwischendruck_stufe_2", "Zwischendruck Stufe 2", "pressure_stage2", 1), ("kaskadendruck", "Kaskadendruck", "pressure_cascade", 1)]:
+        ent("sensor", obj, name, state_topic=f"{T}/{SENSOR_TOPIC[sid]}", unit_of_measurement="bar", device_class="pressure",
+            state_class="measurement", suggested_display_precision=prec, sensor_avail=sid)
+    ent("number", "kaskade_nenndruck", "Nenndruck Speicherkaskade (Anzeige, 0 = nicht festgelegt)",
+        state_topic=f"{T}/maintenance/config/cascade_nominal_bar", command_topic=f"{T}/maintenance/config/cascade_nominal_bar/set",
+        min=0, max=450, step=1, mode="box", unit_of_measurement="bar", entity_category="config", icon="mdi:propane-tank-outline", retain=False)
     # Temperaturen
     for i in (1, 2, 3):
         ent("sensor", f"temperatur_stufe{i}", f"Zylindertemperatur Stufe {i}", state_topic=f"{T}/temperature/stage{i}",
@@ -1081,11 +1146,13 @@ def build_discovery():
         ent("binary_sensor", f"meldung_{cat}", f"Meldung {name}", state_topic=f"{T}/alert/{cat}",
             payload_on="ON", payload_off="OFF", device_class="problem")
     # Sensorstatus
-    for s, name in [("pressure_final", "Enddruck"), ("temp_stage1", "Zylinder Stufe 1"), ("temp_coil12", "Kühlspirale 1→2"),
-                    ("temp_stage2", "Zylinder Stufe 2"), ("temp_coil23", "Kühlspirale 2→3"), ("temp_stage3", "Zylinder Stufe 3"),
-                    ("temp_room", "Raumtemperatur"), ("motor_current", "Motorstrom"), ("supply_voltage", "Versorgungsspannung")]:
+    for s, name in SENSOR_NAMES:
         ent("sensor", f"sensorstatus_{s}", f"Sensorstatus {name}", state_topic=f"{T}/sensor_status/{s}", device_class="enum",
-            options=["ok", "keine_daten", "ungueltig"], entity_category="diagnostic", icon="mdi:access-point-check")
+            options=["ok", "keine_daten", "ungueltig", "nicht_vorhanden"], entity_category="diagnostic", icon="mdi:access-point-check")
+    # Ausstattung: welche Sensoren vorhanden sind (Voreinstellung in cfg.sensors.*.default_on)
+    for s, name in SENSOR_NAMES:
+        ent("switch", f"ausstattung_{s}", f"Ausstattung {name}", state_topic=f"{T}/equipment/{s}", command_topic=f"{T}/equipment/{s}/set",
+            payload_on="ON", payload_off="OFF", entity_category="config", icon="mdi:checkbox-marked-circle-outline", retain=False)
     # System
     S = f"{T}/system"
     ent("sensor", "heartbeat", "Node-RED Heartbeat", state_topic=f"{S}/heartbeat", device_class="timestamp",
@@ -1206,7 +1273,8 @@ const sim = global.get('sim') || { enabled: false, scenario: 'normal' };
 const now = Date.now();
 let s = context.get('s');
 if (!sim.enabled) { if (s) context.set('s', null); node.status({ fill: 'grey', shape: 'ring', text: 'Simulation aus' }); return null; }
-if (!s) s = { phase: 'idle', t: 0, p: 0, T: [18, 18, 18], C: [18, 18], TR: 18, base: 18, seq: 0, last: now, scen: null };
+if (!s) s = { phase: 'idle', t: 0, p: 0, T: [18, 18, 18], C: [18, 18], TR: 18, base: 18, K: 180, seq: 0, last: now, scen: null };
+if (s.K === undefined) s.K = 180;
 if (s.TR === undefined) { s.TR = 18; s.base = 18; s.C = [s.T[0], s.T[1]]; }
 const dt = Math.min(Math.max((now - s.last) / 1000, 0), 10); s.last = now; s.t += dt;
 const sc = sim.scenario; const out = [];
@@ -1241,15 +1309,26 @@ if (run && sc === 'uebertemperatur') rise[2] = 240;
 for (let i = 0; i < 3; i++) s.T[i] += ((s.TR + rise[i]) - s.T[i]) * (1 - Math.exp(-dt / TAU));
 // Kühlspiralen: Gas nach Stufe 1 bzw. 2, durch Kühlluft auf ca. 35 % der Zylinder-Übertemperatur gekühlt
 for (let i = 0; i < 2; i++) s.C[i] += ((s.TR + 0.35 * (s.T[i] - s.TR)) - s.C[i]) * (1 - Math.exp(-dt / 120));
+// Zwischendrücke (frei gewählt): steigen mit dem Enddruck, fallen im Stillstand ab (Entlastung)
+const P1 = run ? 5 + 2 * load : 0, P2 = run ? 30 + 25 * load : 0;
+s.P1 = (s.P1 || 0) + (P1 - (s.P1 || 0)) * (1 - Math.exp(-dt / 8));
+s.P2 = (s.P2 || 0) + (P2 - (s.P2 || 0)) * (1 - Math.exp(-dt / 8));
+// Speicherkaskade (frei gewählt): wird bei laufendem Motor über den Enddruck nachgefüllt,
+// im Stillstand gelegentlich Entnahme (Flaschenfüllung aus der Kaskade)
+if (run && s.p > s.K) s.K += (s.p - s.K) * (1 - Math.exp(-dt / 900));
+if (!run && Math.random() < dt / 240) s.K = Math.max(60, s.K - (10 + Math.random() * 20));
 const I = run ? (s.t < 4 ? 28 : 11.5 + s.p / 100) + noise(0.3) : Math.abs(noise(0.05));
 const U = 400 + noise(3);
 context.set('s', s);
-node.status({ fill: 'blue', shape: 'dot', text: 'SIM ' + sc + '/' + (sim.room || 'normal') + ': ' + (run ? 'läuft' : 'steht') + ', ' + s.p.toFixed(0) + ' bar, T3 ' + s.T[2].toFixed(0) + ' °C, Raum ' + s.TR.toFixed(1) + ' °C' });
+node.status({ fill: 'blue', shape: 'dot', text: 'SIM ' + sc + '/' + (sim.room || 'normal') + ': ' + (run ? 'läuft' : 'steht') + ', ' + s.p.toFixed(0) + ' bar, Kaskade ' + s.K.toFixed(0) + ' bar, T3 ' + s.T[2].toFixed(0) + ' °C, Raum ' + s.TR.toFixed(1) + ' °C' });
 if (sc === 'kommunikationsausfall' || sc === 'sensorknoten_offline') return [out];
 s.seq++;
 const vals = { pressure_final: s.p + noise(0.3), temp_stage1: s.T[0] + noise(0.2), temp_coil12: s.C[0] + noise(0.2), temp_stage2: s.T[1] + noise(0.2),
-               temp_coil23: s.C[1] + noise(0.2), temp_stage3: s.T[2] + noise(0.2), temp_room: s.TR + noise(0.05), motor_current: I, supply_voltage: U };
+               temp_coil23: s.C[1] + noise(0.2), temp_stage3: s.T[2] + noise(0.2), temp_room: s.TR + noise(0.05), motor_current: I, supply_voltage: U,
+               pressure_suction: (run ? -0.05 : 0) + noise(0.01), pressure_stage1: s.P1 + noise(0.05), pressure_stage2: s.P2 + noise(0.2), pressure_cascade: s.K + noise(0.2) };
+const equip = global.get('equipment') || {};
 for (const [k, v] of Object.entries(vals)) {
+    if (equip[k] === false) continue;      // nicht vorhandene Sensoren werden nicht simuliert
     let pv = Math.round(v * 100) / 100, ts = now;
     if (sc === 'sensorfehler' && k === 'temp_stage2') pv = (s.seq % 2) ? null : 999.9;
     if (sc === 'zeitstempelfehler' && k === 'pressure_final') ts = now + 3600 * 1000;

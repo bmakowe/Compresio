@@ -58,6 +58,11 @@ button { font-family: inherit; }
 .toggle.on { background: var(--t-blue); }
 .toggle.on::after { left: 21px; background: #fff; }
 .toggle:disabled { opacity: .4; cursor: not-allowed; }
+.eq-row { display: flex; justify-content: space-between; align-items: center; gap: 10px; padding: 5px 0; border-bottom: 1px solid var(--t-border); }
+.eq-row .k { font-size: 14px; }
+.eq-casc { display: flex; flex-wrap: wrap; align-items: end; gap: 10px 14px; margin-top: 10px; }
+.eq-casc label { display: grid; gap: 4px; font-size: 13px; color: var(--t-text-2); }
+.eq-casc input { width: 120px; }
 .clock { text-align: right; font-size: 14px; line-height: 1.45; color: var(--t-text); font-variant-numeric: tabular-nums; }
 .simbar { margin: 0 12px 6px; padding: 3px 14px; border-radius: 8px; font-size: 11.5px; font-weight: 700; letter-spacing: .3px; color: #1b1200;
   background: repeating-linear-gradient(135deg, #f2b544 0 14px, #e7a935 14px 28px); display: flex; gap: 10px; align-items: center; }
@@ -123,6 +128,8 @@ h3.ct { margin: 0 0 6px; font-size: 16.5px; font-weight: 600; }
 .ov-main .kpis, .ov-main .mid, .ov-main .gauges-8 { grid-template-columns: repeat(var(--ov-n), minmax(0, 1fr)); gap: var(--t-gap); }
 .ov-main .kpi-status { grid-column: span 2; } .ov-main .kpi-pressure { grid-column: span 1; } .ov-main .kpi-rate { grid-column: span 2; }
 .ov-main .kpi-release { grid-column: span 2; } .ov-main .kpi-alerts { grid-column: span 1; }
+/* mit Speicherkaskade: Druckanstieg und Kaskade teilen sich die zwei Spalten */
+.ov-main .has-casc .kpi-rate, .ov-main .kpi-cascade { grid-column: span 1; }
 .mid { display: grid; margin-bottom: var(--t-gap); grid-template-rows: repeat(4, minmax(0, 1fr)); }   /* 4 gleich hohe Zeilen */
 .mid > .card { min-width: 0; min-height: 0; }
 .m-vis   { grid-column: 1 / 5; grid-row: 1 / span 4; }
@@ -259,6 +266,7 @@ tr.clickable:hover td { background: var(--t-card-hover); }
   .ov-main { --ov-n: 4; }
   .ov-main .kpi-status { grid-column: span 2; } .ov-main .kpi-pressure, .ov-main .kpi-rate { grid-column: span 1; }
   .ov-main .kpi-release, .ov-main .kpi-alerts { grid-column: span 2; }
+  .ov-main .has-casc .kpi-alerts { grid-column: span 1; }
   .m-vis { grid-column: 1 / 3; } .m-motor, .m-run, .m-room { grid-column: 3 / 4; }
   .m-c1, .m-c2, .m-c3, .m-c4 { grid-column: 4 / 5; }
   .hdr { grid-template-columns: auto 1fr; }
@@ -271,6 +279,7 @@ tr.clickable:hover td { background: var(--t-card-hover); }
 @container app (max-width: 900px) {
   .ov-main { --ov-n: 2; }
   .ov-main .kpis > .kpi { grid-column: span 1; } .ov-main .kpi-status { grid-column: 1 / -1; }
+  .ov-main .has-casc .kpi-alerts { grid-column: 1 / -1; }
   /* Tablet: gleiches Raster mit 2 Spalten – Visualisierung oben über volle Breite */
   .mid { grid-template-rows: auto repeat(4, minmax(0, 1fr)); }
   .m-vis { grid-column: 1 / -1; grid-row: 1; }
@@ -299,7 +308,7 @@ tr.clickable:hover td { background: var(--t-card-hover); }
   .panel { padding: 6px; }
   .ov-main { --ov-n: 1; }
   .ov-main .kpis > .kpi { grid-column: 1 / -1 !important; }
-  .kpi-status { order: 1; } .kpi-release { order: 2; } .kpi-pressure { order: 3; } .kpi-alerts { order: 4; } .kpi-rate { order: 5; }
+  .kpi-status { order: 1; } .kpi-release { order: 2; } .kpi-pressure { order: 3; } .kpi-cascade { order: 3; } .kpi-alerts { order: 4; } .kpi-rate { order: 5; }
   .duo, .cols-2, .cols-3, .cols-4, .form { grid-template-columns: 1fr; }
   .mid { grid-template-rows: none; grid-auto-rows: auto; }
   .mid > .card { grid-column: 1 !important; grid-row: auto !important; }

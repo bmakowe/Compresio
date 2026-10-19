@@ -95,6 +95,27 @@ ev = influx("SELECT count(value) FROM events.events WHERE type='cycle' AND sourc
 check("Zyklus als Ereignis gespeichert", ev and ev[0]["values"][0][1] >= 1, str(ev and ev[0]["values"][0][1]))
 check("Letzter Zyklus in HA", state(f"sensor.{E}_zyklus_letzter") not in ("unknown", "unavailable"), state(f"sensor.{E}_zyklus_letzter") + " min")
 
+print("== Ausstattung und Speicherkaskade")
+SW_K, SW_T = f"switch.{E}_ausstattung_pressure_cascade", f"switch.{E}_ausstattung_temp_coil23"
+orig = {SW_K: state(SW_K), SW_T: state(SW_T)}
+call("switch", "turn_on", {"entity_id": SW_K})
+def _num(x):
+    try:
+        return float(state(x))
+    except ValueError:
+        return None
+check("Kaskadendruck in HA (Simulation)", wait_for("", lambda: _num(f"sensor.{E}_kaskadendruck") is not None, 40), state(f"sensor.{E}_kaskadendruck") + " bar")
+check("Sensorstatus Kaskade = ok", state(f"sensor.{E}_sensorstatus_pressure_cascade") == "ok", state(f"sensor.{E}_sensorstatus_pressure_cascade"))
+kc = wait_for("", lambda: influx("SELECT count(value) FROM raw.sensor WHERE sensor='pressure_cascade' AND time > now() - 1m"), 30)
+check("InfluxDB: Kaskadendruck gespeichert", kc and kc[0]["values"][0][1] > 0, str(kc and kc[0]["values"][0][1]))
+call("switch", "turn_off", {"entity_id": SW_T})
+check("Nicht vorhandener Sensor: Status nicht_vorhanden", wait_for("", lambda: state(f"sensor.{E}_sensorstatus_temp_coil23") == "nicht_vorhanden", 20), "")
+time.sleep(45)   # länger als stale_s (30 s): ein vorhandener Sensor würde jetzt „liefert keine Daten“ melden
+check("Nicht vorhandener Sensor: keine Meldung", "2→3 liefert keine Daten" not in alerts_text(), alerts_text().split("\n")[0])
+for sw, v in orig.items():
+    call("switch", "turn_on" if v == "on" else "turn_off", {"entity_id": sw})
+check("Ausstattung wiederhergestellt", wait_for("", lambda: all(state(sw) == v for sw, v in orig.items()), 20), str(orig))
+
 print("== Sensorfehler")
 scenario("sensorfehler")
 check("Warnung unplausible Messwerte", wait_for("", lambda: "Unplausible" in alerts_text(), 40), alerts_text().split("\n")[0])

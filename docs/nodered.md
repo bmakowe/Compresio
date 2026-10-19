@@ -13,14 +13,14 @@ python tools/build_nodered.py --export   # nur config/nodered/flows.json schreib
 ## Tabs
 | Tab | Aufgabe |
 |---|---|
-| 00 Konfiguration | `global.cfg`: Sensoren, Messbereiche, **TEST-Schwellwerte**, Timeouts |
+| 00 Konfiguration | `global.cfg`: Sensoren, Messbereiche, **TEST-Schwellwerte**, Timeouts; **Ausstattung** (`global.equipment`, Schalter je Sensor, Voreinstellung `default_on`) |
 | 01 MQTT-Eingang | `kompressor/raw/+` empfangen, Sensorknoten-Status (LWT), zentraler MQTT-Ausgang |
 | 02 Datenvalidierung | Typ und Messbereich, Zeitstempel (fehlend/Zukunft → Empfangszeit, > 1 h alt → verwerfen), Duplikate (Zeitstempel/`seq`) |
 | 03 Datenaufbereitung | letzter Wert je Sensor, Änderungsraten (60 s), aufbereitete MQTT-Werte, InfluxDB-Punkte |
 | 04 Betriebszustand | Motor läuft/steht aus dem Motorstrom (Hysterese 2,0/1,0 A, 4 s Entprellung, TEST), Start/Stopp-Ereignisse |
 | 05 Betriebsstunden | Zähler je Quelle `real`/`sim`: gesamt, seit Wartung, seit Filterwechsel, Starts, Zyklen |
 | 06 Wartungsmanagement | Intervalle aus HA (0 = nicht festgelegt), Status ok/bald_faellig/faellig, Erfassung von Wartung und Filterwechsel |
-| 07 Fehlererkennung | alle 5 s: Sensorstatus, Kommunikation, Grenzwerte (TEST), Verläufe, Wartung, DB |
+| 07 Fehlererkennung | alle 5 s: Sensorstatus (nicht vorhandene Sensoren: `nicht_vorhanden`, keine Meldung), Kommunikation, Grenzwerte (TEST), Verläufe, Wartung, DB |
 | 08 Alarmierung | aktive Meldungen mit Beginnzeit, Gesamtstatus, Ereignisprotokoll |
 | 09 Datenbankanbindung | Puffer (50 000 Zeilen) → `POST /write` in Blöcken, Wiederholung bei Fehlern, Ping |
 | 10 Systemdiagnose | Heartbeat, DB-Status, Raten, Fehlerzähler, Datenalter |

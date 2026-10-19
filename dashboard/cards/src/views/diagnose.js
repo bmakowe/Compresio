@@ -6,7 +6,7 @@ import { Chart, baseOptions, yAxis } from '../components/chart.js';
 import { rangeBar, customRangeForm, wireRange, syncRangeButtons, seriesFor, extendToNow } from './diagpanel.js';
 import { ThermalSection, T_ALL, DT_KEYS } from './thermal.js';
 
-const P_KEYS = ['p_suction', 'p_stage1', 'p_stage2', 'p_final'];
+const P_KEYS = ['p_suction', 'p_stage1', 'p_stage2', 'p_final', 'p_cascade'];
 const T_KEYS = [...T_ALL, ...DT_KEYS];
 const I_KEYS = ['current', 'current_l1', 'current_l2', 'current_l3'];
 const AGG = { '24h': { label: '24 h', ms: 86400e3, period: 'hour' }, '7d': { label: '7 Tage', ms: 7 * 86400e3, period: 'day' },
@@ -43,7 +43,7 @@ export class DiagnoseView {
     <div class="card chart-card"><div class="ch"><h3>Druckverlauf</h3>
       <label class="small muted" style="display:flex; gap:6px; align-items:center"><input type="checkbox" data-opt="norm" ${this.norm ? 'checked' : ''}> normalisiert (0–100 % je Messreihe)</label></div>
       ${this.chips(P_KEYS)}<div class="chart" data-c="p"></div>
-      <div class="hint">Getrennte Skalen je Druckstufe (unterschiedliche Druckniveaus). Ansaug- und Zwischenstufendrücke sind vorbereitet, aber noch nicht gemessen – Druckverhältnisse der Stufen sind daher noch nicht auswertbar.</div></div>
+      <div class="hint">Getrennte Skalen je Druckstufe (unterschiedliche Druckniveaus). Nicht vorhandene Messstellen sind als „kein Sensor“ markiert (Ausstattung: System). Druckverhältnisse der Stufen sind nur mit Zwischendrucksensoren auswertbar.</div></div>
 
     ${this.thermal.render()}
 
@@ -258,10 +258,10 @@ export class DiagnoseView {
       let gaps = 0, gapMs = 0;
       for (let i = 0; i < pts.length; i++) if (pts[i][1] === null) { gaps++; gapMs += ((pts[i + 1]?.[0] ?? +this.win.end) - pts[i][0]); }
       const lvl = s === 'ok' ? 'ok' : s === 'ungueltig' ? 'warn' : 'na';
-      return `<tr><td>${esc(SERIES[k]?.name || k)}</td><td class="c-${lvl}">${{ ok: 'OK', ungueltig: 'ungültig', keine_daten: 'keine Daten' }[s] || 'unbekannt'}</td>
+      return `<tr><td>${esc(SERIES[k]?.name || k)}</td><td class="c-${lvl}">${{ ok: 'OK', ungueltig: 'ungültig', keine_daten: 'keine Daten', nicht_vorhanden: 'nicht vorhanden' }[s] || 'unbekannt'}</td>
         <td>${ent ? fmtTime(ent.last_updated, true) : '–'}</td><td>${this.ser?.mode === 'history' ? `${gaps} (${fmtDuration(gapMs / 1000)})` : 'n/a'}</td></tr>`;
     });
-    const missing = ['p_suction', 'p_stage1', 'p_stage2', 'current_l1', 'current_l2', 'current_l3'].filter((k) => !E[k]).map((k) => SERIES[k].name);
+    const missing = ['p_suction', 'p_stage1', 'p_stage2', 'p_cascade', 'current_l1', 'current_l2', 'current_l3'].filter((k) => !E[k]).map((k) => SERIES[k].name);
     const ev = this.events || [];
     const sv = (k) => num(hass, E.system[k]);
     this.root.querySelector('[data-b="quality"]').innerHTML = `

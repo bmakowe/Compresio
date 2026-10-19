@@ -130,7 +130,10 @@ panel("gauge", "Enddruck aktuell", 0, 5, 8,
       options={"reduceOptions": {"calcs": ["lastNotNull"], "fields": "", "values": False}, "showThresholdMarkers": True,
                "showThresholdLabels": False}, time_from="1m")
 panel("timeseries", "Druckverlauf", 5, 11, 8,
-      [q(f"SELECT mean(\"value\") FROM \"raw\".\"sensor\" WHERE \"sensor\" = 'pressure_final' AND {SRC} AND $timeFilter GROUP BY time($__interval) fill(null)", alias="Enddruck")],
+      [q(f"SELECT mean(\"value\") FROM \"raw\".\"sensor\" WHERE \"sensor\" = '{sid}' AND {SRC} AND $timeFilter GROUP BY time($__interval) fill(null)", ref, alias=name)
+       for ref, sid, name in [("A", "pressure_final", "Enddruck"), ("B", "pressure_cascade", "Kaskade"), ("C", "pressure_stage2", "Zwischendruck 2"),
+                              ("D", "pressure_stage1", "Zwischendruck 1"), ("E", "pressure_suction", "Ansaugdruck")]],
+      desc="Kaskade, Zwischen- und Ansaugdruck nur, wenn die Sensoren vorhanden sind (Ausstattung).",
       field=ts_field("pressurebar", 1), options=TS_OPTS)
 panel("timeseries", "Druckanstieg", 16, 8, 8,
       [q(f"SELECT mean(\"rate\") FROM \"raw\".\"sensor\" WHERE \"sensor\" = 'pressure_final' AND {SRC} AND $timeFilter GROUP BY time($__interval) fill(null)", alias="bar/min")],

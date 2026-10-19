@@ -20,12 +20,20 @@ compressor_label: MEIN KOMPRESSOR
 ## Ansichten
 | Ansicht | Inhalt |
 |---|---|
-| **Übersicht** | Statuskarten (Kompressor, Enddruck mit Sollwert, Druckanstieg mit Referenz, **Betriebsfreigabe mit Knopf Freigeben/Sperren** – siehe [steuerung.md](steuerung.md), Meldungen), schematischer Verdichter mit allen Messstellen, Betriebsdaten, Raumtemperatur (aktuell, 24-h-Verlauf, Min/Max, Sensorstatus), 8 Instrumente in einer Reihe, Statusleiste – **ohne Diagramme** |
+| **Übersicht** | Statuskarten (Kompressor, Enddruck mit Sollwert, Druckanstieg mit Referenz, Speicherkaskade (nur wenn vorhanden), **Betriebsfreigabe mit Knopf Freigeben/Sperren** – siehe [steuerung.md](steuerung.md), Meldungen), schematischer Verdichter mit allen Messstellen, Betriebsdaten, Raumtemperatur (aktuell, 24-h-Verlauf, Min/Max, Sensorstatus), 8 Instrumente in einer Reihe, Statusleiste – **ohne Diagramme** |
 | **Diagnose** | Kennzahlen des Zeitraums, Druckverlauf (getrennte Skalen, normalisierbar), thermische Diagnose (siehe [diagnostics.md](diagnostics.md)), Motorstrom mit Motorzustand und Spannung, Druckanstieg pro Zyklus, Laufzeit je Betriebszyklus, Ø Enddruck mit gleitendem Mittel und Referenz, Betriebszyklen über 24 h / 7 d / 30 d / 12 Monate, Motorstrom vs. Enddruck, Sensorqualität, Referenzbetrieb |
 | **Verläufe** | frei wählbare Messreihen (Druck, Temperatur, Differenzen zur Raumtemperatur, Motor), 1 h bis 12 Monate, bei Statistik-Zeiträumen optional mit Min/Max |
 | **Wartung** | Gesamtbetriebsstunden, letzte und nächste Wartung, Filter, offene Aufgaben, Intervalle (0 = nicht festgelegt), Formular für Wartungseinträge (Datum, Betriebsstunden, Arbeiten, Ersatzteile, Bemerkungen, Zähler zurücksetzen), Historie |
 | **Ereignisse** | chronologische Liste, Filter nach Typ und Zeitraum, Details per Klick, Sprung in den Messwertverlauf |
-| **System** | CPU/RAM/Datenträger, Dienste (MQTT, Node-RED, InfluxDB, Grafana, Tailscale), Datenerfassung, CPU/RAM-Verlauf |
+| **System** | CPU/RAM/Datenträger, Dienste (MQTT, Node-RED, InfluxDB, Grafana, Tailscale), Datenerfassung, CPU/RAM-Verlauf, **Ausstattung**: Schalter je Sensor und Nenndruck der Speicherkaskade |
+
+## Ausstattung und Speicherkaskade
+Nicht jede Anlage hat alle Sensoren. Unter **System → Ausstattung** wird je Messstelle festgelegt, ob sie vorhanden ist (Schalter `switch.kompressor_ausstattung_<sensor>`, gespeichert in Node-RED).
+- Nicht vorhandene Messstellen erscheinen als „Kein Sensor“ (Grafik, Instrumente, Diagramm-Chips), erzeugen keine Meldung „liefert keine Daten“ und werden nicht simuliert.
+- Voreinstellung: Enddruck, T1–T3, T12, T23, Raum, Motorstrom und Spannung vorhanden; Ansaug-, Zwischendrücke und Speicherkaskade nicht vorhanden.
+- Motorstrom ist die Grundlage für Betriebszustand und Betriebsstunden. Das Dashboard fragt beim Abschalten nach.
+
+**Speicherkaskade** (optional, Gesamtdruck `sensor.kompressor_kaskadendruck`): Ist sie vorhanden, zeigt die Übersicht eine Statuskarte „Speicherkaskade“ (teilt sich die Spalten mit dem Druckanstieg) und drei Flaschen in der Grafik mit Druckwert. Der Füllstand bezieht sich auf den eingetragenen **Nenndruck** (System → Ausstattung, `number.kompressor_kaskade_nenndruck`, 0 = nicht festgelegt). Der Nenndruck ist ein Anzeigewert, keine Betriebsgrenze; Meldungen gibt es nur bei Sensorausfall.
 
 ## Screenshots
 | Ansicht | |

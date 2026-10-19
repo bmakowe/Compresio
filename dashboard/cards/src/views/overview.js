@@ -2,7 +2,7 @@
 import { st, avail, num, fmt, fmtHours, fmtMinutes, esc, moreInfo, MAINT_TEXT, MAINT_LEVEL } from '../util.js';
 import { compressorState, measureLevel, categoryState, CAT_LABEL, sourceState, activeAlerts } from '../logic.js';
 import { gaugeSVG, updateGauge } from '../components/gauge.js';
-import { compressorSVG } from '../components/compressor.js';
+import { compressorSVG, CASCADE_BOX } from '../components/compressor.js';
 import { fetchHistory } from '../data.js';
 import { Chart } from '../components/chart.js';
 
@@ -22,9 +22,10 @@ export class OverviewView {
         <div class="gl">${esc(gc.label)}</div>${gaugeSVG(gc)}
 </div>`;
     };
+    const casc = !!cfg.entities.p_cascade;
     return `
 <section class="panel ov-main">
-    <div class="kpis">
+    <div class="kpis ${casc ? 'has-casc' : ''}">
       <div class="card kpi kpi-status clickable" data-more="status">
         <div class="orb" data-b="orb"><i></i></div>
         <div><div class="t1">Kompressor</div><div class="t2" data-b="cs-title">–</div><div class="t3" data-b="cs-sub">–</div></div>
@@ -39,6 +40,11 @@ export class OverviewView {
         <div class="row"><span class="ico-round" style="color: #f2b544"><ha-icon icon="mdi:trending-up"></ha-icon></span>
           <div><div class="val" data-b="pr">–</div><div class="sub" data-b="pr-sub">–</div></div></div>
       </div>
+      ${casc ? `<div class="card kpi kpi-cascade clickable" data-more="p_cascade">
+        <div class="lbl">Speicherkaskade</div>
+        <div class="row"><span class="ico-round" style="background: rgba(179,136,255,.16); color: #b388ff"><ha-icon icon="mdi:propane-tank-outline"></ha-icon></span>
+          <div><div class="val" data-b="kc">–</div><div class="sub" data-b="kc-sub">–</div></div></div>
+      </div>` : ''}
       <div class="card kpi kpi-release">
         <div class="lbl">Betriebsfreigabe</div>
         <div class="row"><span class="ico-round" data-b="rl-ico"><ha-icon icon="mdi:power-plug-off"></ha-icon></span>
@@ -54,7 +60,7 @@ export class OverviewView {
 
     <!-- Mittlerer Bereich: EIN Raster (3 Spalten × 4 gleich hohe Zeilen), alle Karten explizit platziert -->
     <div class="mid">
-      <div class="card vis m-vis"><div class="vis-box">${compressorSVG(cfg.compressor_image, cfg.compressor_label)}</div>
+      <div class="card vis m-vis"><div class="vis-box">${compressorSVG(cfg.compressor_image, cfg.compressor_label, { cascade: casc })}</div>
         <div class="note">${cfg.compressor_image ? 'Foto' : 'Schematische Darstellung – Bauteilanordnung nicht am realen Gerät verifiziert'}</div></div>
       <div class="card list m-motor">
         ${li('motor', 'mdi:engine', 'Motor', 'mo')}
@@ -217,6 +223,20 @@ export class OverviewView {
       call.setAttribute('class', `callout ${k === 'p_final' || k === 'motor' ? 'small ' : ''}${lvl === 'ok' ? '' : lvl === 'off' ? 'na' : lvl}`);
       if (v.textContent !== txt) v.textContent = txt;
       const ld = svg.querySelector(`.ld-${k}`); if (ld) ld.setAttribute('class', `ld-${k} ${lvl === 'ok' ? '' : lvl}`);
+    }
+
+    // Speicherkaskade (optional): Gesamtdruck, Füllstand bezogen auf den eingetragenen Nenndruck
+    if (E.p_cascade) {
+      const kc = num(hass, E.p_cascade), nom = num(hass, E.cascade_nominal), lvl = measureLevel(hass, cfg, 'p_cascade');
+      const frac = kc !== null && nom ? Math.max(0, Math.min(1, kc / nom)) : null;
+      set('kc', kc === null ? 'Keine Daten' : `${fmt(kc, 0)} bar`, kc === null ? 'val c-na' : 'val');
+      set('kc-sub', kc === null ? 'Sensor ohne Daten' : frac !== null ? `${fmt(frac * 100, 0)} % von ${fmt(nom, 0)} bar` : 'Nenndruck nicht festgelegt');
+      const call = svg.querySelector('.callout[data-key="p_cascade"]'), cv = call.querySelector('.cl-v');
+      const txt = kc === null ? '– – –' : `${fmt(kc, 0)} bar`;
+      if (cv.textContent !== txt) cv.textContent = txt;
+      call.setAttribute('class', `callout small ${kc === null ? 'na' : lvl === 'ok' ? '' : lvl}`);
+      const h = (CASCADE_BOX.bottom - CASCADE_BOX.top) * (frac ?? 0), fill = svg.querySelector('.casc-fill');
+      fill.setAttribute('y', CASCADE_BOX.bottom - h); fill.setAttribute('height', h);
     }
 
     // Raumtemperatur (außerhalb der Maschine)

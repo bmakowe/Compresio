@@ -1,5 +1,6 @@
 // Ansicht SYSTEM – Host, Dienste, Datenerfassung (passend zum Kompressor-Design)
 import { st, num, fmt, fmtTime, fmtAgo, esc } from '../util.js';
+import { SERIES } from '../config.js';
 import { gaugeSVG, updateGauge } from '../components/gauge.js';
 import { fetchHistory } from '../data.js';
 import { Chart, baseOptions, yAxis } from '../components/chart.js';
@@ -8,6 +9,13 @@ const HOST = [['cpu', 'CPU-Auslastung'], ['ram', 'RAM-Auslastung'], ['disk', 'Da
 const SERVICES = [['mqtt', 'MQTT-Broker', 'mdi:transit-connection-variant'], ['nodered', 'Node-RED', 'mdi:sitemap-outline'],
                   ['influx', 'InfluxDB', 'mdi:database'], ['grafana', 'Grafana', 'mdi:chart-areaspline'], ['tailscale', 'Tailscale', 'mdi:vpn']];
 const G = { min: 0, max: 100, unit: '%', dec: 0, warn: 75, crit: 90 };
+// Ausstattung: vorhandene Messstellen (Schalter je Sensor in Node-RED)
+const EQUIP = [['Druck', ['p_suction', 'p_stage1', 'p_stage2', 'p_final', 'p_cascade']], ['Temperatur', ['t1', 't12', 't2', 't23', 't3', 'tr']],
+               ['Motor', ['current', 'voltage']]];
+const EQ_WARN = { current: 'Ohne Motorstrom gibt es keine Erkennung des Betriebszustands und keine Betriebsstundenzählung.',
+                  p_final: 'Ohne Enddruck entfallen Druckanstieg, Zyklusdiagnose und Druckmeldungen.' };
+const EQ_LABEL = { p_cascade: 'Speicherkaskade (Gesamtdruck)' };
+const SS_TEXT = { ok: 'Daten OK', keine_daten: 'keine Daten', ungueltig: 'ungültig', nicht_vorhanden: '' };
 
 export class SystemView {
   constructor(app) { this.app = app; this.charts = {}; }
@@ -35,6 +43,14 @@ export class SystemView {
        ['hb', 'Node-RED Heartbeat'], ['inv', 'Ungültige Nachrichten'], ['dup', 'Duplikate / korr. Zeitstempel'], ['up', 'Node-RED seit Deploy']]
       .map(([k, l]) => `<div class="card stat"><div class="k">${l}</div><div class="v" style="font-size:19px" data-b="${k}">–</div><div class="s" data-b="${k}-s"></div></div>`).join('')}
   </div>
+  <div class="card" style="margin-top:8px"><h3 class="ct">Ausstattung <span class="small muted" style="font-weight:400">– welche Sensoren sind vorhanden?</span></h3>
+    <div class="cols-3">${EQUIP.map(([g, keys]) => `<div><div class="small muted" style="margin-bottom:4px">${g}</div>
+      ${keys.map((k) => `<div class="eq-row"><div><div class="k">${esc(EQ_LABEL[k] || SERIES[k].name)}</div><div class="tiny" data-b="eq-${k}-s"></div></div>
+        <button class="toggle" data-eq="${k}" title="vorhanden / nicht vorhanden"></button></div>`).join('')}</div>`).join('')}</div>
+    <div class="eq-casc"><label>Nenndruck Speicherkaskade [bar]<input type="number" min="0" step="1" data-i="cascade_nominal"></label>
+      <button class="btn ghost" data-act="cascade">Übernehmen</button>
+      <span class="tiny">für die Füllstandsanzeige (0 = nicht festgelegt), keine Betriebsgrenze</span></div>
+    <div class="tiny" style="margin-top:6px">Nicht vorhandene Sensoren erzeugen keine Meldungen, werden nicht simuliert und erscheinen im Dashboard als „Kein Sensor“.</div></div>
   <div class="card chart-card" style="margin-top:8px"><div class="ch"><h3>CPU und RAM (24 h)</h3></div><div class="chart" data-c="cr"></div></div>
   <div class="hint">Weboberflächen: <a href="${this.app.cfg.links.grafana}" target="_top" style="color: var(--t-blue-light)">Grafana</a> ·
     <a href="${this.app.cfg.links.nodered}" target="_top" style="color: var(--t-blue-light)">Node-RED</a></div>
@@ -46,8 +62,26 @@ export class SystemView {
     const S = this.app.cfg.entities.system;
     root.querySelectorAll('[data-more]').forEach((el) => el.addEventListener('click', () =>
       el.dispatchEvent(new CustomEvent('hass-more-info', { bubbles: true, composed: true, detail: { entityId: S[el.dataset.more] } }))));
+    root.querySelectorAll('[data-eq]').forEach((el) => el.addEventListener('click', () => this.toggleEquip(el.dataset.eq)));
+    root.querySelector('[data-act="cascade"]').addEventListener('click', () => this.saveNominal());
     this.charts.cr = new Chart(root.querySelector('[data-c="cr"]'), { ...baseOptions({ height: 220, id: 'sys-cr' }), series: [], yaxis: [yAxis('%', { min: 0, max: 100 })] });
     this.loadChart();
+  }
+
+  async toggleEquip(k) {
+    const hass = this.app.hass, id = this.app.base.entities.equipment[k], s = st(hass, id);
+    if (!s || s.state === 'unavailable') { this.app.toast('Ausstattungsschalter nicht verfügbar (Node-RED)'); return; }
+    const on = s.state === 'on', name = EQ_LABEL[k] || SERIES[k].name;
+    if (on && !confirm(`„${name}“ als NICHT VORHANDEN markieren?${EQ_WARN[k] ? '\n\n' + EQ_WARN[k] : ''}`)) return;
+    await hass.callService('switch', on ? 'turn_off' : 'turn_on', { entity_id: id });
+    this.app.toast(`${name}: ${on ? 'nicht vorhanden' : 'vorhanden'}`);
+  }
+
+  async saveNominal() {
+    const el = this.root.querySelector('[data-i="cascade_nominal"]'), v = Number(el.value);
+    if (!Number.isFinite(v) || v < 0 || v > 450) { this.app.toast('Nenndruck 0–450 bar'); return; }
+    await this.app.hass.callService('number', 'set_value', { entity_id: this.app.base.entities.cascade_nominal, value: v });
+    el.dataset.dirty = ''; this.app.toast('Nenndruck übernommen');
   }
 
   async loadChart() {
@@ -88,6 +122,17 @@ export class SystemView {
     const hb = st(hass, S.heartbeat)?.state; set('hb', hb && hb !== 'unavailable' ? fmtAgo(hb) : 'Keine Daten', `v ${hb && hb !== 'unavailable' && Date.now() - Date.parse(hb) < 60e3 ? 'c-ok' : 'c-crit'}`);
     set('hb-s', esc(attr.zaehler_herkunft ? `Zähler: ${attr.zaehler_herkunft}` : ''));
     set('inv', fmt(num(hass, S.invalid), 0)); set('dup', `${fmt(num(hass, S.duplicates), 0)} / ${fmt(num(hass, S.ts_fixed), 0)}`);
+    // Ausstattung
+    const B = this.app.base.entities;
+    for (const [, keys] of EQUIP) for (const k of keys) {
+      const sw = st(hass, B.equipment[k]), el = this.root.querySelector(`[data-eq="${k}"]`);
+      el.classList.toggle('on', sw?.state === 'on'); el.disabled = !sw || sw.state === 'unavailable';
+      const ss = st(hass, B.sensor_status[k])?.state;
+      set(`eq-${k}-s`, !sw ? 'Schalter fehlt' : sw.state === 'off' ? 'nicht vorhanden' : SS_TEXT[ss] ?? 'Status unbekannt',
+          `tiny c-${!sw || sw.state === 'off' ? 'na' : ss === 'ok' ? 'ok' : ss === 'ungueltig' ? 'warn' : 'na'}`);
+    }
+    const ni = this.root.querySelector('[data-i="cascade_nominal"]'), nv = num(hass, B.cascade_nominal);
+    if (ni && this.root.getRootNode().activeElement !== ni && nv !== null && ni.value !== String(nv)) ni.value = String(nv);
     set('up', `${fmt(num(hass, S.uptime), 1)} h`); set('up-s', attr.flows_version ? `Flows ${attr.flows_version}` : '');
   }
 

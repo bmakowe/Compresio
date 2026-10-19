@@ -1,7 +1,7 @@
 // Zustandslogik der Oberfläche. Grundsatz: Fehlende Daten werden NIE als OK dargestellt.
 import { st, avail, num, NA } from './util.js';
 
-const SENSOR_ID = { p_final: 'pressure_final', t1: 'temp_stage1', t12: 'temp_coil12', t2: 'temp_stage2', t23: 'temp_coil23', t3: 'temp_stage3', tr: 'temp_room', current: 'motor_current', voltage: 'supply_voltage' };
+import { SENSOR_ID } from './config.js';
 
 export function activeAlerts(hass, cfg) {
   const a = st(hass, cfg.entities.alerts);
@@ -72,7 +72,8 @@ export function categoryState(hass, cfg, cat) {
       if (status === 'keine_daten') return { level: 'na', text: 'Keine Daten' };
       break;
     case 'sensor_data': {
-      const ss = Object.values(E.sensor_status).map((id) => st(hass, id)?.state);
+      // nur vorhandene Messstellen (Ausstattung): nicht vorhandene sind null bzw. „nicht_vorhanden“
+      const ss = Object.values(E.sensor_status).filter(Boolean).map((id) => st(hass, id)?.state).filter((x) => x !== 'nicht_vorhanden');
       if (ss.every((x) => x !== 'ok')) return { level: 'na', text: 'Keine Daten' };
       if (ss.some((x) => x !== 'ok')) return { level: 'warn', text: 'Unvollständig' };
       break;

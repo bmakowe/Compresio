@@ -28,6 +28,8 @@ kompressor/
 ├─ motor/starts            Anzahl
 ├─ supply/voltage          V
 ├─ pressure/final          bar
+├─ pressure/cascade        bar (Speicherkaskade, Gesamtdruck – optional)
+├─ pressure/suction|stage1|stage2  bar (Ansaug-, Zwischendrücke – optional)
 ├─ pressure/rate           bar/min
 ├─ temperature/stage1..3   °C  (T1, T2, T3 – Zylinder)
 ├─ temperature/coil12|coil23 °C (T12, T23 – Kühlspiralen)
@@ -37,11 +39,12 @@ kompressor/
 ├─ cycle/current_minutes   laufender Zyklus
 ├─ cycle/last_minutes      letzter Zyklus
 ├─ maintenance/status | filter_status | hours_since | filter_hours_since | remaining_h | filter_remaining_h | attr
-├─ maintenance/config/<interval_h|filter_interval_h>[/set]
+├─ maintenance/config/<interval_h|filter_interval_h|pressure_setpoint_bar|rate_reference_bar_min|cascade_nominal_bar>[/set]
 ├─ maintenance/<service_done|filter_done>/set
 ├─ alerts                  JSON: aktive Meldungen
 ├─ alert/<kategorie>       ON/OFF: comm, sensor_data, temperature, pressure, maintenance, database
-├─ sensor_status/<sensor>  ok | keine_daten | ungueltig
+├─ sensor_status/<sensor>  ok | keine_daten | ungueltig | nicht_vorhanden
+├─ equipment/<sensor>[/set]  ON/OFF: Ausstattung – Sensor vorhanden (retained)
 ├─ system/*                heartbeat, influxdb, db_buffer, rx_per_min, invalid_total, duplicates_total,
 │                          ts_corrected_total, data_age_s, uptime_h, attr
 ├─ event                   JSON-Ereignisse → event.kompressor_ereignis
@@ -59,7 +62,8 @@ Der Sensorknoten (z. B. ESP32 oder Shelly mit eigener Firmware) muss nur Folgend
    {"v": 187.4, "ts": 1792359845000, "src": "real", "seq": 4711}
    ```
    `ts` ist optional (Unix-Zeit in ms, sonst wird die Empfangszeit genommen). `seq` ist optional und dient der Duplikaterkennung.
-3. Sensor-IDs: `pressure_final`, `temp_stage1`, `temp_coil12`, `temp_stage2`, `temp_coil23`, `temp_stage3`, `temp_room`, `motor_current`, `supply_voltage`.
+3. Sensor-IDs: `pressure_final`, `temp_stage1`, `temp_coil12`, `temp_stage2`, `temp_coil23`, `temp_stage3`, `temp_room`, `motor_current`, `supply_voltage`, optional `pressure_suction`, `pressure_stage1`, `pressure_stage2`, `pressure_cascade`.
+   Welche Sensoren vorhanden sind, legt die Ausstattung fest (`equipment/<sensor>`, im Dashboard unter System). Nicht vorhandene Sensoren erzeugen keine Meldungen.
    Neue Messgrößen: Eintrag in `cfg.sensors` (Node-RED, Tab 00) und Discovery in `tools/build_nodered.py` ergänzen.
 
 ## MQTT Discovery

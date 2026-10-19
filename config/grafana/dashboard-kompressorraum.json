@@ -600,7 +600,7 @@
     "type": "influxdb",
     "uid": "kompressor-influx"
    },
-   "description": "",
+   "description": "Kaskade, Zwischen- und Ansaugdruck nur, wenn die Sensoren vorhanden sind (Ausstattung).",
    "gridPos": {
     "h": 8,
     "w": 11,
@@ -618,6 +618,50 @@
      "rawQuery": true,
      "resultFormat": "time_series",
      "alias": "Enddruck"
+    },
+    {
+     "refId": "B",
+     "datasource": {
+      "type": "influxdb",
+      "uid": "kompressor-influx"
+     },
+     "query": "SELECT mean(\"value\") FROM \"raw\".\"sensor\" WHERE \"sensor\" = 'pressure_cascade' AND \"source\" =~ /^$source$/ AND $timeFilter GROUP BY time($__interval) fill(null)",
+     "rawQuery": true,
+     "resultFormat": "time_series",
+     "alias": "Kaskade"
+    },
+    {
+     "refId": "C",
+     "datasource": {
+      "type": "influxdb",
+      "uid": "kompressor-influx"
+     },
+     "query": "SELECT mean(\"value\") FROM \"raw\".\"sensor\" WHERE \"sensor\" = 'pressure_stage2' AND \"source\" =~ /^$source$/ AND $timeFilter GROUP BY time($__interval) fill(null)",
+     "rawQuery": true,
+     "resultFormat": "time_series",
+     "alias": "Zwischendruck 2"
+    },
+    {
+     "refId": "D",
+     "datasource": {
+      "type": "influxdb",
+      "uid": "kompressor-influx"
+     },
+     "query": "SELECT mean(\"value\") FROM \"raw\".\"sensor\" WHERE \"sensor\" = 'pressure_stage1' AND \"source\" =~ /^$source$/ AND $timeFilter GROUP BY time($__interval) fill(null)",
+     "rawQuery": true,
+     "resultFormat": "time_series",
+     "alias": "Zwischendruck 1"
+    },
+    {
+     "refId": "E",
+     "datasource": {
+      "type": "influxdb",
+      "uid": "kompressor-influx"
+     },
+     "query": "SELECT mean(\"value\") FROM \"raw\".\"sensor\" WHERE \"sensor\" = 'pressure_suction' AND \"source\" =~ /^$source$/ AND $timeFilter GROUP BY time($__interval) fill(null)",
+     "rawQuery": true,
+     "resultFormat": "time_series",
+     "alias": "Ansaugdruck"
     }
    ],
    "fieldConfig": {

@@ -5,6 +5,7 @@ import { esc } from '../util.js';
 //   Ansaugluft → Zylinder Stufe 1 [T1] → Kühlspirale 1–2 [T12] → Zylinder Stufe 2 [T2]
 //   → Kühlspirale 2–3 [T23] → Zylinder Stufe 3 [T3] → Luftaufbereitung / Enddruck
 // Raumtemperatur [TR] wird außerhalb der Maschine angezeigt (Sensor nicht am Kompressor montiert).
+// Optional: Speicherkaskade (drei Flaschen, Gesamtdruck) rechts unten, gespeist über die Luftaufbereitung.
 // Maße/Anordnung sind schematisch und NICHT am realen Gerät verifiziert.
 
 const C = { x: 230, y: 238 };                 // Kurbelgehäuse
@@ -37,7 +38,21 @@ function coil(x0, x1, y, cls) {
   return s + '</g>';
 }
 
-export function compressorSVG(imageUrl, label = 'KOMPRESSOR') {
+/** Speicherkaskade: drei Flaschen mit gemeinsamer Füllstandsanzeige (Höhe per JS, siehe setCascadeLevel) */
+function cascade() {
+  const xs = [338, 366, 394], top = 258, bot = 304;
+  const bottle = (x) => `<rect x="${x}" y="${top}" width="22" height="${bot - top}" rx="9"/>`;
+  return `<g class="casc">
+    <clipPath id="cCasc">${xs.map(bottle).join('')}</clipPath>
+    <path d="M 438 250 L 349 250" class="casc-pipe"/>${xs.map((x) => `<path d="M ${x + 11} 250 L ${x + 11} ${top}" class="casc-pipe"/>`).join('')}
+    <g class="casc-shell">${xs.map(bottle).join('')}</g>
+    <rect class="casc-fill" x="338" y="${bot}" width="78" height="0" clip-path="url(#cCasc)"/>
+    ${xs.map((x) => `<rect x="${x + 7}" y="246" width="8" height="8" rx="2" class="casc-valve"/>`).join('')}
+  </g>`;
+}
+export const CASCADE_BOX = { top: 258, bottom: 304 };
+
+export function compressorSVG(imageUrl, label = 'KOMPRESSOR', opts = {}) {
   const [h1x, h1y] = head(210, 112), [h2x, h2y] = head(270, 112), [h3x, h3y] = head(330, 112);
   const COIL_Y = 104;
   // Luftweg in Verdichtungsfolge
@@ -118,6 +133,7 @@ export function compressorSVG(imageUrl, label = 'KOMPRESSOR') {
   <g class="room" data-key="tr" transform="translate(430 14)"><rect width="86" height="42" rx="7"/>
     <text x="9" y="16" class="cl-k">TR Raum</text><text x="9" y="35" class="cl-v" data-v="tr">–</text></g>
   ${call('motor', 'Motor', 14, 300, 86, 'small')}
+  ${opts.cascade ? cascade() + call('p_cascade', 'Kaskade', 342, 196, 86, 'small') : ''}
 </svg>`;
 }
 
@@ -128,6 +144,8 @@ export const COMPRESSOR_CSS = `
 .cmp .callout.na rect { stroke: #6f8496; } .cmp .callout.warn rect { stroke: #f2b544; } .cmp .callout.crit rect { stroke: #ef5350; }
 .cmp .callout.small rect { stroke: #55b5ff; } .cmp .callout.small.na rect { stroke: #6f8496; }
 .cmp .callout.missing rect { stroke: #6f8496; stroke-dasharray: 4 3; }
+.cmp .callout.missing .cl-v { font-size: 13px; font-weight: 600; }
+.cmp .leaders path.missing { stroke: #6f8496; stroke-dasharray: 3 3; }
 .cmp .cl-k { font-size: 11px; fill: #c8d6e2; }
 .cmp .cl-v { font-size: 16px; font-weight: 700; fill: #3cf08f; }
 .cmp .callout.small .cl-v { font-size: 14.5px; fill: #55b5ff; }
@@ -137,6 +155,10 @@ export const COMPRESSOR_CSS = `
 .cmp .room.na .cl-v { fill: #8a9caa; }
 .cmp .leaders path { stroke: #20d978; } .cmp .leaders path.na { stroke: #6f8496; } .cmp .leaders path.warn { stroke: #f2b544; } .cmp .leaders path.crit { stroke: #ef5350; }
 .cmp .leaders path.ld-p_final { stroke: #55b5ff; }
+.cmp .casc-pipe { stroke: #a7b3bd; stroke-width: 4; fill: none; stroke-linecap: round; }
+.cmp .casc-shell rect { fill: #24384a; stroke: #8b98a3; stroke-width: 1.5; }
+.cmp .casc-fill { fill: #b388ff; opacity: .55; }
+.cmp .casc-valve { fill: #c9d3dc; }
 .cmp .flow { opacity: 0; }
 .cmp.running .flow { opacity: .9; animation: flow 1s linear infinite; }
 .cmp .fan-blades { transform-origin: 72px 254px; transform-box: view-box; }

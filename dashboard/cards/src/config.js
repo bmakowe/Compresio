@@ -1,8 +1,18 @@
 // Zentrale Zuordnung der Entitäten und Darstellungsbereiche.
 // Echte Sensorik ersetzt die Simulation ohne Änderung: dieselben Entitäten, Quelle über sensor.kompressor_quelle.
 // Fehlende Messgrößen = null → werden in der Oberfläche als „Kein Sensor“ gekennzeichnet.
+// Ausstattung: Ist der Schalter equipment.<key> aus, behandelt die Oberfläche die Messgröße wie null (main.js, applyEquipment).
 
 const E = 'kompressor';
+
+// Dashboard-Schlüssel → Sensor-ID in Node-RED (cfg.sensors)
+export const SENSOR_ID = {
+  p_suction: 'pressure_suction', p_stage1: 'pressure_stage1', p_stage2: 'pressure_stage2', p_final: 'pressure_final', p_cascade: 'pressure_cascade',
+  t1: 'temp_stage1', t12: 'temp_coil12', t2: 'temp_stage2', t23: 'temp_coil23', t3: 'temp_stage3', tr: 'temp_room',
+  current: 'motor_current', voltage: 'supply_voltage',
+};
+// Abhängige Werte: entfallen, wenn eine der Messstellen nicht vorhanden ist
+const DEPENDS = { dt1: ['t1', 'tr'], dt2: ['t2', 'tr'], dt3: ['t3', 'tr'], dt12: ['t12', 'tr'], dt23: ['t23', 'tr'], p_rate: ['p_final'], cascade_nominal: ['p_cascade'] };
 
 export const DEFAULT_CONFIG = {
   title: 'Compresio',
@@ -18,10 +28,12 @@ export const DEFAULT_CONFIG = {
     current: `sensor.${E}_motorstrom`,
     current_l1: null, current_l2: null, current_l3: null,          // dreiphasige Messung: noch nicht vorhanden
     voltage: `sensor.${E}_spannung`,
-    p_suction: null,                                               // Ansaugdruck: noch kein Sensor
-    p_stage1: null,                                                // Zwischendruck Stufe 1: noch kein Sensor
-    p_stage2: null,                                                // Zwischendruck Stufe 2: noch kein Sensor
+    p_suction: `sensor.${E}_ansaugdruck`,                          // optional (Ausstattung)
+    p_stage1: `sensor.${E}_zwischendruck_stufe_1`,                 // optional (Ausstattung)
+    p_stage2: `sensor.${E}_zwischendruck_stufe_2`,                 // optional (Ausstattung)
     p_final: `sensor.${E}_enddruck`,
+    p_cascade: `sensor.${E}_kaskadendruck`,                        // Speicherkaskade, Gesamtdruck (optional)
+    cascade_nominal: `number.${E}_kaskade_nenndruck`,              // Nenndruck der Kaskade für die Füllstandsanzeige (0 = nicht festgelegt)
     p_rate: `sensor.${E}_druckanstieg`,
     // Temperaturmessstellen in Verdichtungsfolge: T1 → T12 → T2 → T23 → T3, dazu Raumtemperatur TR
     t1: 'sensor.kompressor_temperatur_stufe_1',              // Zylinder Stufe 1
@@ -66,7 +78,11 @@ export const DEFAULT_CONFIG = {
       database: `binary_sensor.${E}_meldung_database`,
     },
     sensor_status: {
+      p_suction: `sensor.${E}_sensorstatus_pressure_suction`,
+      p_stage1: `sensor.${E}_sensorstatus_pressure_stage1`,
+      p_stage2: `sensor.${E}_sensorstatus_pressure_stage2`,
       p_final: `sensor.${E}_sensorstatus_pressure_final`,
+      p_cascade: `sensor.${E}_sensorstatus_pressure_cascade`,
       t1: `sensor.${E}_sensorstatus_temp_stage1`,
       t12: `sensor.${E}_sensorstatus_temp_coil12`,
       t2: `sensor.${E}_sensorstatus_temp_stage2`,
@@ -76,6 +92,8 @@ export const DEFAULT_CONFIG = {
       current: `sensor.${E}_sensorstatus_motor_current`,
       voltage: `sensor.${E}_sensorstatus_supply_voltage`,
     },
+    // Ausstattung: Schalter je Messstelle (Node-RED, MQTT-Discovery). Fehlt der Schalter, gilt die Messstelle als vorhanden.
+    equipment: Object.fromEntries(Object.entries(SENSOR_ID).map(([k, id]) => [k, `switch.${E}_ausstattung_${id}`])),
     system: {
       cpu: 'sensor.system_monitor_prozessornutzung',
       ram: 'sensor.system_monitor_arbeitsspeicherauslastung',
@@ -123,6 +141,17 @@ export const DEFAULT_CONFIG = {
   },
 };
 
+/** Wendet die Ausstattung an: nicht vorhandene Messstellen (Schalter aus) → Entität null. Liefert {cfg, sig}. */
+export function applyEquipment(base, hass) {
+  const off = Object.keys(base.entities.equipment || {}).filter((k) => base.entities[k] && hass?.states[base.entities.equipment[k]]?.state === 'off');
+  const sig = off.join(',');
+  if (!off.length) return { cfg: base, sig };
+  const cfg = structuredClone(base), E = cfg.entities;
+  for (const k of off) { E[k] = null; if (E.sensor_status[k]) E.sensor_status[k] = null; }
+  for (const [k, deps] of Object.entries(DEPENDS)) if (deps.some((d) => !E[d])) E[k] = null;
+  return { cfg, sig };
+}
+
 export function mergeConfig(user) {
   const out = structuredClone(DEFAULT_CONFIG);
   const deep = (t, s) => {
@@ -141,6 +170,7 @@ export const SERIES = {
   p_stage1: { name: 'Zwischendruck 1', color: '#F2B544', unit: 'bar' },
   p_stage2: { name: 'Zwischendruck 2', color: '#EF5350', unit: 'bar' },
   p_final: { name: 'Enddruck', color: '#20D978', unit: 'bar' },
+  p_cascade: { name: 'Kaskadendruck', color: '#B388FF', unit: 'bar' },
   t1: { name: 'T1 Zylinder 1', short: 'T1', color: '#2F8CF0', unit: '°C' },
   t12: { name: 'T12 Kühlspirale 1–2', short: 'T12', color: '#8ED9D3', unit: '°C' },
   t2: { name: 'T2 Zylinder 2', short: 'T2', color: '#F2B544', unit: '°C' },

@@ -18,6 +18,7 @@ Simulator ──MQTT──► kompressor/raw/<sensor>  {"v":…, "ts":…, "src"
 ## Bedienung
 Im Dashboard über den Schalter „Simulation“ oben rechts oder über die Entitäten:
 - `switch.kompressor_simulation`: an/aus. Beim Ausschalten meldet sich der simulierte Sensorknoten ab, danach zeigt das System „Keine Daten“.
+- Simuliert werden nur Sensoren, die in der Ausstattung als vorhanden markiert sind. Zwischendrücke steigen mit dem Enddruck; die Speicherkaskade wird bei laufendem Motor nachgefüllt und verliert im Stillstand gelegentlich Druck (Entnahme). Alle Werte sind frei gewählt.
 - `select.kompressor_simulation_szenario`:
 
 | Szenario | Verhalten | Erwartete Reaktion |

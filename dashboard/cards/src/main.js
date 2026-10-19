@@ -3,7 +3,7 @@
 // Datenquellen ausschließlich HA-Entitäten/-APIs, keine Cloud, alles lokal ausgeliefert.
 import { STYLES } from './styles.js';
 import { COMPRESSOR_CSS } from './components/compressor.js';
-import { mergeConfig } from './config.js';
+import { mergeConfig, applyEquipment } from './config.js';
 import { st, navigate } from './util.js';
 import { OverviewView } from './views/overview.js';
 import { DiagnoseView } from './views/diagnose.js';
@@ -34,7 +34,9 @@ class CompresioApp extends HTMLElement {
   constructor() {
     super();
     this.attachShadow({ mode: 'open' });
-    this.cfg = mergeConfig({});
+    this.base = mergeConfig({});
+    this.cfg = this.base;
+    this.equipSig = '';
     this.range = sessionStorage.getItem('kompressorraum-range') || '1h';
     this.custom = null;
     this.viewKey = null;
@@ -42,18 +44,19 @@ class CompresioApp extends HTMLElement {
   }
 
   // ---- Lovelace-Karte
-  setConfig(config) { this.cfg = mergeConfig(config || {}); this.isCard = true; }
+  setConfig(config) { this.base = this.cfg = mergeConfig(config || {}); this.isCard = true; }
   getCardSize() { return 20; }
   static getStubConfig() { return {}; }
 
   // ---- Custom Panel
-  set panel(p) { this._panel = p; this.cfg = mergeConfig(p?.config || {}); }
+  set panel(p) { this._panel = p; this.base = this.cfg = mergeConfig(p?.config || {}); }
   set narrow(n) { this._narrow = n; this.shadowRoot.querySelector('.menu-btn')?.toggleAttribute('hidden', !n); }
   set route(r) { this._route = r; if (this._built) this.showView(this.viewFromRoute()); }
 
   set hass(h) {
     const first = !this._hass;
     this._hass = h;
+    this.applyEquipment();
     if (!this._built) this.build();
     // Ansicht erst aufbauen, wenn die Karte im Dokument hängt (ApexCharts benötigt ein eingehängtes Element)
     if (first && this.isConnected) this.showView(this.viewFromRoute());
@@ -78,6 +81,15 @@ class CompresioApp extends HTMLElement {
     window.removeEventListener('popstate', this._onLoc);
     this.view?.destroy();
     this.view = null; this.viewKey = null;
+  }
+
+  /** Ausstattung anwenden; ändert sie sich, wird die aktuelle Ansicht neu aufgebaut */
+  applyEquipment() {
+    const { cfg, sig } = applyEquipment(this.base, this._hass);
+    this.cfg = cfg;
+    if (sig === this.equipSig) return;
+    this.equipSig = sig;
+    if (this.view && this.viewKey) { const k = this.viewKey; this.viewKey = null; this.showView(k); }
   }
 
   basePath() {

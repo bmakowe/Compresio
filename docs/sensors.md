@@ -8,6 +8,8 @@ Status: **[C] geplant.** Die Plattform, die Schnittstellen und die Simulation si
 - Sensoren melden nur, sie schalten nichts.
 
 ## Messgrößen und Zuordnung
+Welche Messgrößen vorhanden sind, wird im Dashboard unter **System → Ausstattung** festgelegt ([dashboard.md](dashboard.md)).
+
 | ID (MQTT `raw/<id>`) | Messgröße | HA-Entität | Status |
 |---|---|---|---|
 | `temp_stage1` | T1 Zylinder Stufe 1 | `sensor.kompressor_temperatur_stufe_1` | Simulation |
@@ -19,7 +21,9 @@ Status: **[C] geplant.** Die Plattform, die Schnittstellen und die Simulation si
 | `pressure_final` | Enddruck | `sensor.kompressor_enddruck` | Simulation |
 | `motor_current` | Motorstrom | `sensor.kompressor_motorstrom` | Simulation |
 | `supply_voltage` | Versorgungsspannung | `sensor.kompressor_spannung` | Simulation |
-| – | Ansaugdruck, Zwischendruck 1/2 | – (Dashboard: „Kein Sensor“) | nicht vorgesehen ohne Herstellerfreigabe |
+| `pressure_suction` | Ansaugdruck | `sensor.kompressor_ansaugdruck` | optional (Ausstattung), Voreinstellung nicht vorhanden; nur nach Herstellerfreigabe |
+| `pressure_stage1` / `pressure_stage2` | Zwischendruck Stufe 1 / 2 | `sensor.kompressor_zwischendruck_stufe_1` / `_2` | optional, wie oben |
+| `pressure_cascade` | Speicherkaskade, Gesamtdruck | `sensor.kompressor_kaskadendruck` | optional, Voreinstellung nicht vorhanden |
 | – | Motorstrom L1/L2/L3 | – (vorbereitet) | optional |
 
 ## Hinweise zur Temperaturmessung (Vorschlag, noch nicht bewertet)

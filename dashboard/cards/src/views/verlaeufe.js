@@ -6,7 +6,7 @@ import { Chart, baseOptions, yAxis } from '../components/chart.js';
 import { customRangeForm, wireRange, syncRangeButtons } from './diagpanel.js';
 
 const GROUPS = [
-  ['Druck', 'bar', ['p_final', 'p_rate', 'p_suction', 'p_stage1', 'p_stage2']],
+  ['Druck', 'bar', ['p_final', 'p_rate', 'p_suction', 'p_stage1', 'p_stage2', 'p_cascade']],
   ['Temperatur', '°C', ['t1', 't12', 't2', 't23', 't3', 'tr']],
   ['Differenz zu Raum', '°C', ['dt1', 'dt2', 'dt3', 'dt12', 'dt23']],
   ['Motor', 'A / V', ['current', 'voltage', 'current_l1', 'current_l2', 'current_l3']],
