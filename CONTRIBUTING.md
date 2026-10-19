@@ -2,11 +2,11 @@
 
 Danke für dein Interesse an Compresio! Verbesserungen von eingetragenen Vereinen (e.V.) und Einzelpersonen sind willkommen.
 
-> **Vorläufig:** Solange Lizenz und CLA noch nicht abschließend geprüft sind ([docs/legal-review.md](docs/legal-review.md)), werden Beiträge **nur nach vorheriger Absprache** angenommen. Bitte zuerst ein Issue eröffnen.
+> Bitte vor größeren Änderungen zuerst ein Issue eröffnen und das Vorhaben abstimmen.
 
 ## Lizenzbedingungen für Beiträge
-- Das Projekt ist **Source Available** (Community-Lizenz für eingetragene Vereine und Privatpersonen + kommerzielle Einzellizenzen, siehe [LICENSE](LICENSE), [docs/licensing.md](docs/licensing.md)).
-- Damit der Rechteinhaber Beiträge auch in kommerziellen Lizenzen verwenden darf, ist voraussichtlich ein **Contributor License Agreement** nötig ([Entwurf](docs/CLA-draft.md), noch unverbindlich).
+- Das Projekt ist **Source Available**: [Compresio Community License 1.0](LICENSE) für eingetragene Vereine und Privatpersonen, kommerzielle Lizenzen per Einzelvertrag ([LICENSE-COMMERCIAL.md](LICENSE-COMMERCIAL.md)).
+- Beiträge werden nur mit Zustimmung zum **Contributor License Agreement** übernommen ([docs/CLA.md](docs/CLA.md)). Damit darf der Rechteinhaber Beiträge auch in kommerziellen Lizenzen verwenden.
 - Reiche nur Beiträge ein, an denen du die Rechte hast. Kläre gegebenenfalls mit deinem Arbeitgeber, ob du beitragen darfst.
 - Übernimm keinen Code mit unklarer oder inkompatibler Lizenz. Neue Fremdkomponenten bitte in [THIRD_PARTY_LICENSES.md](THIRD_PARTY_LICENSES.md) eintragen (Name, Version, Lizenz, Herkunft) und die Lizenztexte unter `LICENSES/` ablegen. Copyleft-Bibliotheken (GPL/AGPL) dürfen nicht in das Dashboard-Bundle aufgenommen werden.
 

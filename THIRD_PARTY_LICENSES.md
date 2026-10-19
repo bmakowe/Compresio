@@ -27,7 +27,7 @@ Diese Software setzt auf folgende Systeme auf, die der Betreiber selbst installi
 | node-red-contrib-influxdb | über App installiert | MIT | – |
 | Eclipse Mosquitto (HA-App `core_mosquitto`) | App 7.1.1 | EPL-2.0 / EDL-1.0 | – |
 | InfluxDB 1.x (HA-App `a0d7b954_influxdb`) | App 6.0.0 | MIT | – |
-| Grafana (HA-App `a0d7b954_grafana`) | 13.2.3 (App 13.0.3) | **AGPL-3.0** | Nur das Dashboard-JSON (`config/grafana/`) ist Teil dieses Projekts. Es wird von Grafana eingelesen und ist kein abgeleitetes Werk von Grafana (Einschätzung, siehe docs/legal-review.md). Grafana selbst wird weder verändert noch verteilt |
+| Grafana (HA-App `a0d7b954_grafana`) | 13.2.3 (App 13.0.3) | **AGPL-3.0** | Nur das Dashboard-JSON (`config/grafana/`) ist Teil dieses Projekts. Es wird von Grafana eingelesen und ist kein abgeleitetes Werk von Grafana. Grafana selbst wird weder verändert noch verteilt |
 | Tailscale (HA-App) | App 0.30.2 | BSD-3-Clause (Client) | optional |
 | Material Design Icons | über Home Assistant (`ha-icon`) | Pictogrammers Free License / Apache-2.0 | werden vom HA-Frontend geladen, nicht mitverteilt |
 | Schriftarten | Systemschriften (Inter/Segoe UI/Roboto, falls installiert) | – | keine Schriftdateien im Repository |

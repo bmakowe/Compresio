@@ -1,58 +1,226 @@
-LIZENZSTATUS – NOCH NICHT FESTGELEGT / LICENSE STATUS – NOT YET DETERMINED
-==========================================================================
+Compresio Community License 1.0
+===============================
 
 Copyright (c) 2026 Björn Makowe
 
+Die deutsche Fassung ist verbindlich. Die englische Fassung ist eine
+Übersetzung zur Information.
+The German version is binding. The English version is a translation
+provided for information.
+
+
 DEUTSCH
+-------
 
-Für dieses Repository ist noch keine Lizenz erteilt. Bis zur abschließenden
-Lizenzentscheidung und rechtlichen Prüfung (siehe docs/legal-review.md) gilt:
-Alle Rechte vorbehalten. Ohne ausdrückliche Erlaubnis des Rechteinhabers ist
-keine Nutzung, Vervielfältigung, Veränderung oder Weitergabe gestattet.
-Rechte an Fremdkomponenten bleiben davon unberührt (siehe
-THIRD_PARTY_LICENSES.md).
+1. Lizenzgeber und Software
 
-Vorgesehen ist ein Dual-Licensing-Modell („Source Available“, nicht
-„Open Source“ im Sinne der OSI):
+   Lizenzgeber ist Björn Makowe. „Software“ ist Compresio in der in diesem
+   Repository veröffentlichten Form einschließlich Quellcode, Konfigurationen,
+   Dokumentation und Grafiken sowie davon abgeleiteter Fassungen.
+   Fremdkomponenten (siehe THIRD_PARTY_LICENSES.md) stehen unter ihren
+   eigenen Lizenzen und sind von dieser Lizenz nicht erfasst.
 
-  1. Community-Lizenz (in Ausarbeitung, siehe docs/licensing.md):
-     – kostenlos für jeden eingetragenen Verein (e.V.) für seinen eigenen
-       Vereinsbetrieb, auch wenn er einer Tauchschule angegliedert ist
-     – kostenlos für Privatpersonen zur privaten Nutzung
-     – nicht für nicht eingetragene Vereine und gewerbliche Nutzer;
-       ebenfalls nicht zulässig ist der Betrieb durch oder für eine
-       Tauchschule bzw. ein Unternehmen über einen Verein (verdeckte
-       gewerbliche Nutzung).
-  2. Kommerzielle Lizenz: gesonderter Vertrag mit dem Rechteinhaber
-     (siehe LICENSE-COMMERCIAL.md). Auch die rein interne Nutzung durch
-     gewerbliche Unternehmen ist lizenzpflichtig.
+2. Berechtigte
 
-Sobald der Text der Community-Lizenz rechtlich geprüft ist, wird diese
-Datei durch den endgültigen Lizenztext ersetzt. Anfragen: über GitHub
-(Issue „Lizenzanfrage“ im Repository bmakowe/compresio).
+   Berechtigt sind ausschließlich:
 
-ENGLISH
+   a) eingetragene Vereine (Eintragung im Vereinsregister, Namenszusatz
+      „e.V.“), unabhängig von ihrer Gemeinnützigkeit, für ihren eigenen
+      Vereinsbetrieb. Das gilt auch, wenn der Verein Atemluftflaschen gegen
+      Entgelt füllt oder einer Tauchschule oder einem anderen Unternehmen
+      angegliedert ist;
 
-No license has been granted for this repository yet. Until the license
-decision and legal review are completed (see docs/legal-review.md):
-All rights reserved. No use, reproduction, modification or distribution is
-permitted without the express permission of the copyright holder. Rights in
-third-party components remain unaffected (see THIRD_PARTY_LICENSES.md).
+   b) natürliche Personen für private, nicht gewerbliche Zwecke.
 
-Planned dual-licensing model ("source available", not "open source" as
-defined by the OSI):
+3. Rechteeinräumung
 
-  1. Community license (being drafted, see docs/licensing.md):
-     – free for any registered association under German law ("e.V.") for
-       its own association activities, even if attached to a dive school
-     – free for individuals for private use
-     – not for unregistered associations or commercial users; operation by
-       or for a dive school or company through an association (concealed
-       commercial use) is not permitted either.
-  2. Commercial license: separate agreement with the copyright holder
-     (see LICENSE-COMMERCIAL.md). Internal use by commercial entities also
-     requires a commercial license.
+   Der Lizenzgeber räumt jedem Berechtigten das einfache, unentgeltliche,
+   weltweite und zeitlich unbeschränkte Recht ein, die Software für die in
+   Nr. 2 genannten Zwecke zu nutzen, zu installieren, zu betreiben, zu
+   vervielfältigen, zu verändern, zu erweitern, zu veröffentlichen und
+   unverändert oder verändert weiterzugeben.
 
-This file will be replaced by the final license text once the community
-license has been legally reviewed. Contact: via GitHub ("license request"
-issue in the repository bmakowe/compresio).
+4. Bedingungen für die Weitergabe
+
+   Wer die Software unverändert oder verändert weitergibt oder
+   veröffentlicht, muss
+
+   a) diesen Lizenztext und den Urheberrechtsvermerk beifügen,
+   b) Änderungen als solche kenntlich machen,
+   c) die Software ausschließlich unter dieser Lizenz weitergeben und darf
+      keine zusätzlichen Beschränkungen auferlegen.
+
+   Die Weitergabe gibt dem Empfänger keine weitergehenden Rechte als nach
+   dieser Lizenz.
+
+5. Nicht erlaubte Nutzung
+
+   Ohne gesonderte kommerzielle Lizenz nicht erlaubt ist
+
+   a) jede gewerbliche Nutzung, auch die ausschließlich interne Nutzung,
+      insbesondere durch Tauchschulen, Tauchshops, Tauchbasen, gewerbliche
+      Betreiber von Kompressoren oder Füllstationen, Dienstleister,
+      Systemintegratoren, Hersteller und sonstige Unternehmen;
+
+   b) die Nutzung durch nicht eingetragene Vereine und alle anderen
+      Organisationen, die nicht unter Nr. 2 fallen;
+
+   c) die gewerbliche Einrichtung, Wartung oder der gewerbliche Betrieb der
+      Software für Dritte, auch wenn der Dritte ein eingetragener Verein ist.
+
+6. Umgehungsverbot
+
+   Die Nutzung nach Nr. 2 a) muss dem eigenen Vereinsbetrieb dienen. Keine
+   erlaubte Nutzung liegt vor, wenn ein Verein die Software für eine
+   Tauchschule oder ein anderes Unternehmen betreibt, sie ihm überlässt oder
+   wenn ein Unternehmen die Software über einen Verein für seinen
+   Geschäftsbetrieb nutzt (verdeckte gewerbliche Nutzung).
+
+7. Kommerzielle Lizenz
+
+   Für Nutzungen nach Nr. 5 und Nr. 6 vergibt der Lizenzgeber kommerzielle
+   Lizenzen ausschließlich durch gesonderten schriftlichen Vertrag (siehe
+   LICENSE-COMMERCIAL.md). Anfragen über GitHub: Issue mit der Vorlage
+   „Lizenzanfrage“ im Repository bmakowe/compresio.
+
+8. Name und Logo
+
+   Diese Lizenz räumt keine Rechte an dem Namen „Compresio“ und den Logos
+   ein. Erlaubt ist ein sachlicher Hinweis auf die Herkunft, z. B. „basiert
+   auf Compresio“. Veränderte Fassungen dürfen nicht unter dem Namen oder
+   mit dem Logo „Compresio“ verbreitet werden. Einzelheiten:
+   assets/branding/BRANDING.md.
+
+9. Beendigung
+
+   Bei einem Verstoß gegen diese Lizenz erlöschen die eingeräumten Rechte
+   automatisch. Sie leben wieder auf, wenn der Verstoß innerhalb von 30 Tagen
+   nach einem Hinweis des Lizenzgebers vollständig beendet wird. Beim zweiten
+   Verstoß leben die Rechte nicht wieder auf.
+
+10. Haftung und Gewährleistung
+
+   Die Software wird unentgeltlich überlassen. Der Lizenzgeber haftet nur für
+   Vorsatz und grobe Fahrlässigkeit, für Schäden aus der Verletzung von
+   Leben, Körper oder Gesundheit sowie nach dem Produkthaftungsgesetz. Für
+   Sach- und Rechtsmängel haftet er nur, wenn er einen Mangel arglistig
+   verschwiegen hat.
+
+   Die Software ist kein Sicherheitssystem. Sie ersetzt keine
+   Sicherheitsventile, Druckschalter, Schutzeinrichtungen, Prüfungen oder
+   Herstellervorgaben. Die Sicherheits- und Haftungshinweise in DISCLAIMER.md
+   sind Bestandteil dieser Lizenz.
+
+11. Schlussbestimmungen
+
+   Es gilt das Recht der Bundesrepublik Deutschland unter Ausschluss des
+   UN-Kaufrechts. Gerichtsstand ist, soweit gesetzlich zulässig, der
+   Wohnsitz des Lizenzgebers. Ist eine Bestimmung unwirksam, bleiben die
+   übrigen Bestimmungen wirksam.
+
+
+ENGLISH (translation)
+---------------------
+
+1. Licensor and software
+
+   The licensor is Björn Makowe. "Software" means Compresio as published in
+   this repository, including source code, configuration, documentation and
+   graphics, and versions derived from it. Third-party components (see
+   THIRD_PARTY_LICENSES.md) are subject to their own licenses and are not
+   covered by this license.
+
+2. Eligible licensees
+
+   Only the following are eligible:
+
+   a) registered associations under German law (entered in the register of
+      associations, suffix "e.V."), regardless of charitable status, for
+      their own association activities. This also applies if the
+      association fills breathing-air cylinders for a fee or is attached to
+      a dive school or another company;
+
+   b) natural persons for private, non-commercial purposes.
+
+3. Grant of rights
+
+   The licensor grants each eligible licensee the non-exclusive, free,
+   worldwide and perpetual right to use, install, operate, copy, modify,
+   extend, publish and distribute the software, modified or unmodified, for
+   the purposes stated in section 2.
+
+4. Conditions for distribution
+
+   Anyone who distributes or publishes the software, modified or unmodified,
+   must
+
+   a) include this license text and the copyright notice,
+   b) mark modifications as such,
+   c) distribute the software only under this license and must not impose
+      any additional restrictions.
+
+   Distribution does not give the recipient any rights beyond this license.
+
+5. Use not permitted
+
+   The following require a separate commercial license:
+
+   a) any commercial use, including purely internal use, in particular by
+      dive schools, dive shops, dive centers, commercial operators of
+      compressors or filling stations, service providers, system
+      integrators, manufacturers and other companies;
+
+   b) use by unregistered associations and all other organisations not
+      covered by section 2;
+
+   c) commercial installation, maintenance or operation of the software for
+      third parties, even if the third party is a registered association.
+
+6. Anti-circumvention
+
+   Use under section 2 a) must serve the association's own activities. It is
+   not permitted use if an association operates the software for a dive
+   school or another company, makes it available to such a company, or if a
+   company uses the software through an association for its business
+   (concealed commercial use).
+
+7. Commercial license
+
+   For uses under sections 5 and 6, the licensor grants commercial licenses
+   only by separate written agreement (see LICENSE-COMMERCIAL.md). Requests
+   via GitHub: issue using the "license request" template in the repository
+   bmakowe/compresio.
+
+8. Name and logo
+
+   This license does not grant any rights to the name "Compresio" or its
+   logos. A factual reference to the origin, e.g. "based on Compresio", is
+   permitted. Modified versions must not be distributed under the name or
+   logo "Compresio". Details: assets/branding/BRANDING.md.
+
+9. Termination
+
+   Any violation of this license automatically terminates the rights
+   granted. They are reinstated if the violation is fully remedied within
+   30 days of notice from the licensor. Rights are not reinstated after a
+   second violation.
+
+10. Liability and warranty
+
+   The software is provided free of charge. The licensor is liable only for
+   intent and gross negligence, for injury to life, body or health, and
+   under the German Product Liability Act. The licensor is liable for
+   defects in quality or title only if a defect was fraudulently concealed.
+
+   The software is not a safety system. It does not replace safety valves,
+   pressure switches, protective devices, inspections or manufacturer
+   requirements. The safety and liability notice in DISCLAIMER.md forms part
+   of this license.
+
+11. Final provisions
+
+   This license is governed by the laws of the Federal Republic of Germany,
+   excluding the UN Convention on Contracts for the International Sale of
+   Goods. To the extent permitted by law, the place of jurisdiction is the
+   licensor's place of residence. If any provision is invalid, the remaining
+   provisions remain in effect.

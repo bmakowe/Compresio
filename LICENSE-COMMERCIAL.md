@@ -17,7 +17,7 @@ Eine gesonderte, kostenpflichtige Lizenz ist für **jede gewerbliche Nutzung** e
 **Auch die ausschließlich interne Nutzung ist lizenzpflichtig.** Beispiel: Eine gewerbliche Tauchschule überwacht damit nur ihren eigenen Kompressor. Es spielt keine Rolle, ob die Software weiterverkauft wird. Eine kostenlose gewerbliche Nutzung ist nicht vorgesehen.
 
 ### Wer benötigt keine kommerzielle Lizenz?
-**Jeder eingetragene Verein (e.V.)** für seinen eigenen Vereinsbetrieb, auch wenn er Flaschen gegen Entgelt füllt oder einer Tauchschule angegliedert ist, und **Privatpersonen** für ihre private Nutzung. Vereinigungen ohne „e.V.“ benötigen eine kommerzielle Lizenz. **Nicht zulässig** ist es, die Software über einen Verein für eine Tauchschule oder ein Unternehmen zu betreiben (verdeckte gewerbliche Nutzung). Für Berechtigte gilt die Community-Lizenz (siehe [LICENSE](LICENSE) und [docs/licensing.md](docs/licensing.md)).
+**Jeder eingetragene Verein (e.V.)** für seinen eigenen Vereinsbetrieb, auch wenn er Flaschen gegen Entgelt füllt oder einer Tauchschule angegliedert ist, und **Privatpersonen** für ihre private Nutzung. Vereinigungen ohne „e.V.“ benötigen eine kommerzielle Lizenz. **Nicht zulässig** ist es, die Software über einen Verein für eine Tauchschule oder ein Unternehmen zu betreiben (verdeckte gewerbliche Nutzung). Für sie gilt die [Compresio Community License 1.0](LICENSE).
 
 ### Erwerb
 Kommerzielle Lizenzen werden individuell per Vertrag vergeben. Es gibt keine frei verwendbare kommerzielle Lizenz, die ohne Vertragsabschluss gilt. Lizenzgebühren sind noch nicht festgelegt.
@@ -34,7 +34,7 @@ A separate paid license is required for **any commercial use**, in particular by
 **Purely internal use also requires a license**, e.g. a commercial dive school monitoring only its own compressor. Resale is irrelevant. Free commercial use is not offered.
 
 ### Who does not need one?
-**Any registered association under German law ("e.V.")** for its own association activities, including those filling cylinders for a fee or attached to a dive school, and **individuals** for private use. Associations without "e.V." need a commercial license. Operating the software through an association for a dive school or company (concealed commercial use) is **not** permitted.
+**Any registered association under German law ("e.V.")** for its own association activities, including those filling cylinders for a fee or attached to a dive school, and **individuals** for private use. Associations without "e.V." need a commercial license. Operating the software through an association for a dive school or company (concealed commercial use) is **not** permitted. They are covered by the [Compresio Community License 1.0](LICENSE).
 
 ### How to obtain one
 Commercial licenses are granted individually by contract. No commercial license applies without a signed agreement. Fees have not been set yet.

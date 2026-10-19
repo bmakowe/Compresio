@@ -22,12 +22,13 @@ Herstellerunabhängig: nutzbar für jeden mehrstufigen Atemluftkompressor; Name,
 
 ## License & Usage
 
-**Status:** Die Lizenz ist noch nicht endgültig festgelegt. Bis dahin gilt [LICENSE](LICENSE) (alle Rechte vorbehalten). Vorgesehen ist das folgende Modell (Details: [docs/licensing.md](docs/licensing.md)).
+Es gilt die **[Compresio Community License 1.0](LICENSE)**; kommerzielle Lizenzen gibt es per Einzelvertrag ([LICENSE-COMMERCIAL.md](LICENSE-COMMERCIAL.md)). Hintergrund: [docs/licensing.md](docs/licensing.md).
+The **[Compresio Community License 1.0](LICENSE)** applies; commercial licenses are available by individual agreement.
 
 ### Deutsch
 - **Kostenlos für jeden eingetragenen Verein (e.V.)** für seinen eigenen Vereinsbetrieb, auch wenn er Flaschen gegen Entgelt füllt oder einer Tauchschule angegliedert ist.
 - **Kostenlos für Privatpersonen** zur privaten Nutzung.
-- **Ändern und Weiterentwickeln erlaubt**, ebenso Veröffentlichen und Weitergeben, jeweils unter den Bedingungen der Community-Lizenz.
+- **Ändern und Weiterentwickeln erlaubt**, ebenso Veröffentlichen und Weitergeben, jeweils unter der Compresio Community License.
 - **Nicht kostenlos** für nicht eingetragene Vereine. **Nicht zulässig** ist der Betrieb durch oder für eine Tauchschule über einen Verein (verdeckte gewerbliche Nutzung).
 - **Kommerzielle Nutzung nur mit separater Lizenz:** gewerbliche Tauchschulen, Tauchshops, Tauchcenter, Kompressorbetreiber, Unternehmen, Systemintegratoren, Hersteller.
 - **Auch rein interne gewerbliche Nutzung ist lizenzpflichtig**, z. B. eine Tauchschule, die nur ihren eigenen Kompressor überwacht. Siehe [LICENSE-COMMERCIAL.md](LICENSE-COMMERCIAL.md).
@@ -36,7 +37,7 @@ Herstellerunabhängig: nutzbar für jeden mehrstufigen Atemluftkompressor; Name,
 ### English
 - **Free for any registered association under German law ("e.V.")** for its own association activities, including those filling cylinders for a fee or attached to a dive school.
 - **Free for individuals** for private use.
-- **Modification and further development allowed**, including publishing and redistribution, under the community license terms.
+- **Modification and further development allowed**, including publishing and redistribution, under the Compresio Community License.
 - **Not free** for unregistered associations. Operation by or for a dive school through an association (concealed commercial use) is **not** permitted.
 - **Commercial use requires a separate license:** commercial dive schools, dive shops, dive centers, compressor operators, companies, system integrators, manufacturers.
 - **Internal commercial use also requires a license**, e.g. a dive school monitoring only its own compressor. See [LICENSE-COMMERCIAL.md](LICENSE-COMMERCIAL.md).

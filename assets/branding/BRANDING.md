@@ -79,12 +79,11 @@ Alle SVGs: keine externen Ressourcen, keine Rasterbilder, keine Schriftarten, `v
 ## GitHub Social Preview
 `social-preview.png` enthält das Symbol, den Schriftzug, den Untertitel, die Technologien als reinen Text (Home Assistant · Node-RED · InfluxDB · Grafana) und die Kennzeichnung „SOURCE AVAILABLE“. Fremde Logos sind nicht enthalten. Hochladen: Repository → Settings → General → Social preview → Edit → Upload an image.
 
-## Vorläufige Markenrichtlinie
-> **Entwurf, rechtlich zu prüfen.** Diese Richtlinie ändert die Lizenzbedingungen der Software nicht.
+## Markenrichtlinie
+Diese Richtlinie ergänzt [LICENSE](../../LICENSE) Nr. 8.
 
 1. Name und Logo „Compresio“ kennzeichnen das Projekt des Rechteinhabers Björn Makowe.
-2. Die Softwarelizenz (siehe [LICENSE](../../LICENSE)) räumt **keine Rechte an Name und Logo** ein. Das gilt auch für die geplante Community-Lizenz und kommerzielle Lizenzen, soweit dort nichts anderes vereinbart ist. *(rechtlich zu prüfen)*
-3. Erlaubt ist ein **sachlicher Hinweis** auf das Projekt, z. B. „basiert auf Compresio“ oder ein Link auf das Repository. *(rechtlich zu prüfen)*
-4. Veränderte Versionen und Forks dürfen **nicht** unter dem Namen oder mit dem Logo „Compresio“ verbreitet werden und nicht den Eindruck erwecken, offiziell zu sein. *(rechtlich zu prüfen)*
+2. Weder die Compresio Community License noch eine kommerzielle Lizenz räumen Rechte an Name und Logo ein, soweit im Einzelvertrag nichts anderes vereinbart ist.
+3. Erlaubt ist ein **sachlicher Hinweis** auf das Projekt, z. B. „basiert auf Compresio“ oder ein Link auf das Repository.
+4. Veränderte Versionen und Forks dürfen **nicht** unter dem Namen oder mit dem Logo „Compresio“ verbreitet werden und nicht den Eindruck erwecken, offiziell zu sein.
 5. Name und Logo dürfen nicht für Produkte, Dienstleistungen oder Werbung genutzt werden, die eine Zertifizierung, Sicherheitsfunktion oder garantierte Betriebssicherheit nahelegen ([DISCLAIMER.md](../../DISCLAIMER.md)).
-6. Ob „Compresio“ als Marke eintragungsfähig und frei von älteren Rechten ist, ist **noch nicht geprüft** (siehe [docs/legal-review.md](../../docs/legal-review.md)).
